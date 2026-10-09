@@ -134,11 +134,8 @@
     <script src="script.js"></script>
     <script>
         function initStudentDashboard() {
-            let user = ExamStore.getCurrentUser();
-            if (!user || user.role !== 'student') {
-                user = { fullName: 'John Doe', role: 'student', username: 'johndoe', id: 'usr_s1', department: 'B.Tech Computer Science' };
-                ExamStore.setCurrentUser(user);
-            }
+            let user = AppNav.requireAuth(['student', 'admin']);
+            if (!user) return;
             AppNav.render('student-dashboard');
             updateStats();
             renderMyExams();

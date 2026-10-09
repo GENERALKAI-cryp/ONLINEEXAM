@@ -12,14 +12,16 @@ const ExamStore = {
         CURRENT_USER: 'currentUser'
     },
 
-    DATA_VERSION: 'clean_v2',
+    DATA_VERSION: 'clean_v3',
 
     // Initialize Store with clean official structure
     init() {
-        // Automatically flush previous mock test submissions
-        if (localStorage.getItem('oes_clean_ver') !== this.DATA_VERSION) {
+        // Automatically refresh data and users when store version updates
+        if (localStorage.getItem('oes_data_ver') !== this.DATA_VERSION) {
+            this.seedUsers();
             localStorage.removeItem(this.KEYS.SUBMISSIONS);
             localStorage.setItem(this.KEYS.SUBMISSIONS, JSON.stringify([]));
+            localStorage.setItem('oes_data_ver', this.DATA_VERSION);
             localStorage.setItem('oes_clean_ver', this.DATA_VERSION);
         }
 
@@ -56,6 +58,7 @@ const ExamStore = {
         const newUser = {
             id: 'usr_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
             username: userData.username,
+            password: userData.password || 'Student@123',
             fullName: userData.fullName,
             email: userData.email || (userData.username + '@university.edu'),
             role: userData.role, // 'admin', 'teacher', 'student'
@@ -371,11 +374,19 @@ const ExamStore = {
     // --- SEED DATA ---
     seedUsers() {
         const users = [
-            { id: 'usr_admin', username: 'admin', fullName: 'Dean / Admin Office', email: 'admin@university.edu', role: 'admin', status: 'Active', department: 'Academic Administration', createdAt: '2026-09-01T08:00:00Z' },
-            { id: 'usr_t1', username: 'rsmith', fullName: 'Prof. Robert Smith', email: 'r.smith@university.edu', role: 'teacher', status: 'Active', department: 'Computer Science', createdAt: '2026-09-05T09:00:00Z' },
-            { id: 'usr_t2', username: 'erostova', fullName: 'Dr. Elena Rostova', email: 'e.rostova@university.edu', role: 'teacher', status: 'Active', department: 'Information Security', createdAt: '2026-09-10T11:00:00Z' },
-            { id: 'usr_s1', username: 'johndoe', fullName: 'John Doe', email: 'john.doe@student.university.edu', role: 'student', status: 'Active', department: 'B.Tech Computer Science', createdAt: '2026-09-15T12:00:00Z' },
-            { id: 'usr_s2', username: 'janesmith', fullName: 'Jane Smith', email: 'jane.smith@student.university.edu', role: 'student', status: 'Active', department: 'B.Tech Information Technology', createdAt: '2026-09-15T12:30:00Z' }
+            // Admin accounts
+            { id: 'usr_admin', username: 'admin', password: 'Admin@123', fullName: 'Dean / Admin Office', email: 'admin@university.edu', role: 'admin', status: 'Active', department: 'Academic Administration', createdAt: '2026-09-01T08:00:00Z' },
+            { id: 'usr_a_test', username: 'admin_test', password: 'Admin@123', fullName: 'Dr. Arthur Vance (Dean)', email: 'admin.test@university.edu', role: 'admin', status: 'Active', department: 'Academic Administration', createdAt: '2026-10-09T10:00:00Z' },
+
+            // Teacher accounts (Official & Dedicated Test)
+            { id: 'usr_t_test', username: 'teacher_test', password: 'Teacher@123', fullName: 'Prof. Sarah Jenkins', email: 'teacher.test@university.edu', role: 'teacher', status: 'Active', department: 'Computer Science', createdAt: '2026-10-09T10:00:00Z' },
+            { id: 'usr_t1', username: 'rsmith', password: 'Teacher@123', fullName: 'Prof. Robert Smith', email: 'r.smith@university.edu', role: 'teacher', status: 'Active', department: 'Computer Science', createdAt: '2026-09-05T09:00:00Z' },
+            { id: 'usr_t2', username: 'erostova', password: 'Teacher@123', fullName: 'Dr. Elena Rostova', email: 'e.rostova@university.edu', role: 'teacher', status: 'Active', department: 'Information Security', createdAt: '2026-09-10T11:00:00Z' },
+
+            // Student accounts (Official & Dedicated Test)
+            { id: 'usr_s_test', username: 'student_test', password: 'Student@123', fullName: 'Alex Mercer', email: 'student.test@university.edu', role: 'student', status: 'Active', department: 'B.Tech Computer Science', createdAt: '2026-10-09T10:00:00Z' },
+            { id: 'usr_s1', username: 'johndoe', password: 'Student@123', fullName: 'John Doe', email: 'john.doe@student.university.edu', role: 'student', status: 'Active', department: 'B.Tech Computer Science', createdAt: '2026-09-15T12:00:00Z' },
+            { id: 'usr_s2', username: 'janesmith', password: 'Student@123', fullName: 'Jane Smith', email: 'jane.smith@student.university.edu', role: 'student', status: 'Active', department: 'B.Tech Information Technology', createdAt: '2026-09-15T12:30:00Z' }
         ];
         this.saveUsers(users);
     },

@@ -33,6 +33,24 @@ const Toast = {
 };
 
 const AppNav = {
+    requireAuth(allowedRoles = []) {
+        const user = ExamStore.getCurrentUser();
+        if (!user) {
+            alert('Security Notice: You must log in to access this portal.');
+            window.location.href = 'login.html';
+            return null;
+        }
+        if (typeof allowedRoles === 'string') allowedRoles = [allowedRoles];
+        if (allowedRoles.length > 0 && !allowedRoles.includes(user.role)) {
+            alert(`Security Alert: Access Denied!\n\nYour account is registered as a ${user.role.toUpperCase()}.\nYou do not have permission to access the ${allowedRoles.join('/')} portal.`);
+            if (user.role === 'admin') window.location.href = 'admin-dashboard.html';
+            else if (user.role === 'teacher') window.location.href = 'teacher-dashboard.html';
+            else window.location.href = 'student-dashboard.html';
+            return null;
+        }
+        return user;
+    },
+
     render(activeKey = '') {
         const user = ExamStore.getCurrentUser() || { fullName: 'Demo User', role: 'student', username: 'guest' };
         const header = document.querySelector('header');

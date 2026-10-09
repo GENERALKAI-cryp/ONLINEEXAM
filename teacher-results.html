@@ -51,11 +51,8 @@
     <script src="script.js"></script>
     <script>
         function initPastResults() {
-            let user = ExamStore.getCurrentUser();
-            if (!user || user.role !== 'teacher') {
-                user = { fullName: 'Prof. Robert Smith', role: 'teacher', username: 'rsmith' };
-                ExamStore.setCurrentUser(user);
-            }
+            let user = AppNav.requireAuth(['teacher', 'admin']);
+            if (!user) return;
             AppNav.render('teacher-results');
             renderPastResults();
         }

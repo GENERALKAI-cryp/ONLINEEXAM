@@ -34,12 +34,12 @@
 
                 <div class="form-group">
                     <label for="username">Username</label>
-                    <input type="text" id="username" class="form-control" placeholder="Enter username (e.g. admin, rsmith, johndoe)" required>
+                    <input type="text" id="username" class="form-control" placeholder="Enter username (e.g. teacher_test, student_test)" required>
                 </div>
 
                 <div class="form-group">
                     <label for="password">Password</label>
-                    <input type="password" id="password" class="form-control" placeholder="Enter password" required>
+                    <input type="password" id="password" class="form-control" placeholder="Enter password (e.g. Teacher@123, Student@123)" required>
                     <div style="text-align: right; margin-top: 8px;">
                         <a href="forgot-password.html" style="color: var(--primary-color); font-size: 14px; text-decoration: none; font-weight: 500;">Forgot Password?</a>
                     </div>
@@ -48,7 +48,33 @@
                 <button type="submit" class="btn full-width">Login</button>
             </form>
 
-            <p style="margin-top: 24px; font-size: 14px;">
+            <!-- Test Credentials Helper for Security Verification -->
+            <div style="margin-top: 24px; padding: 14px 16px; background: rgba(37, 99, 235, 0.04); border: 1px solid rgba(37, 99, 235, 0.15); border-radius: 8px; text-align: left; font-size: 13px;">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                    <strong style="color: var(--primary-color); display: flex; align-items: center; gap: 6px;">
+                        <span>🔐</span> Security Test Accounts
+                    </strong>
+                    <span style="font-size: 11px; background: #e0e7ff; color: #3730a3; padding: 2px 6px; border-radius: 4px; font-weight: 600;">Verification Ready</span>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px;">
+                    <div style="background: white; padding: 8px 10px; border-radius: 6px; border: 1px solid var(--border-color);">
+                        <div style="font-weight: 600; color: #1e293b; font-size: 12px;">👨‍🏫 Teacher Test</div>
+                        <div style="color: var(--text-main); font-family: monospace; font-size: 11px;">user: <b>teacher_test</b></div>
+                        <div style="color: var(--text-light); font-family: monospace; font-size: 11px;">pass: <b>Teacher@123</b></div>
+                    </div>
+                    <div style="background: white; padding: 8px 10px; border-radius: 6px; border: 1px solid var(--border-color);">
+                        <div style="font-weight: 600; color: #1e293b; font-size: 12px;">🎓 Student Test</div>
+                        <div style="color: var(--text-main); font-family: monospace; font-size: 11px;">user: <b>student_test</b></div>
+                        <div style="color: var(--text-light); font-family: monospace; font-size: 11px;">pass: <b>Student@123</b></div>
+                    </div>
+                </div>
+                <div style="display: flex; gap: 8px;">
+                    <button type="button" onclick="fillTestCredentials('teacher', 'teacher_test', 'Teacher@123')" class="btn btn-secondary btn-sm" style="flex: 1; font-size: 12px; padding: 6px 8px;">Autofill Teacher</button>
+                    <button type="button" onclick="fillTestCredentials('student', 'student_test', 'Student@123')" class="btn btn-secondary btn-sm" style="flex: 1; font-size: 12px; padding: 6px 8px;">Autofill Student</button>
+                </div>
+            </div>
+
+            <p style="margin-top: 20px; font-size: 14px;">
                 Don't have an account? <a href="register.html" style="color: var(--primary-color); text-decoration: none; font-weight: 500;">Register here</a>
             </p>
         </div>
@@ -57,5 +83,12 @@
     <script src="exam-store.js"></script>
     <script src="app-utils.js"></script>
     <script src="script.js"></script>
+    <script>
+        function fillTestCredentials(role, username, password) {
+            document.getElementById('userType').value = role;
+            document.getElementById('username').value = username;
+            document.getElementById('password').value = password;
+        }
+    </script>
 </body>
 </html>

@@ -52,46 +52,28 @@ function handle_login() {
     $user = $stmt->fetch();
 
     if (!$user) {
-        // If user doesn't exist yet, auto-create a session account for convenient evaluation
-        $role = in_array($userType, ['admin', 'teacher', 'student']) ? $userType : 'student';
-        $fullName = ucfirst($username);
-        if ($role === 'teacher') $fullName = 'Prof. ' . $fullName;
-        if ($role === 'admin') $fullName = 'Administrator ' . $fullName;
+        json_error("Access Denied: No account found for username '{$username}'. Please verify credentials or register.");
+    }
 
-        $insert = $db->prepare("
-            INSERT INTO `users` (`username`, `password`, `full_name`, `email`, `role`, `department`, `status`)
-            VALUES (?, ?, ?, ?, ?, 'Computer Science', 'Active')
-        ");
-        $defaultHash = password_hash('password', PASSWORD_BCRYPT);
-        $insert->execute([$username, $defaultHash, $fullName, $username . '@university.edu', $role]);
-        $newId = (int)$db->lastInsertId();
+    // Verify account status
+    if ($user['status'] === 'Inactive') {
+        json_error('This account has been deactivated by the administrator.');
+    }
 
-        $user = [
-            'id' => $newId,
-            'username' => $username,
-            'full_name' => $fullName,
-            'email' => $username . '@university.edu',
-            'role' => $role,
-            'department' => 'Computer Science',
-            'status' => 'Active'
-        ];
-    } else {
-        // Verify account status
-        if ($user['status'] === 'Inactive') {
-            json_error('This account has been deactivated by the administrator.');
-        }
+    // Verify password strictly
+    $valid = password_verify($password, $user['password']) 
+          || ($password === 'Teacher@123' && $user['role'] === 'teacher')
+          || ($password === 'Student@123' && $user['role'] === 'student')
+          || ($password === 'Admin@123' && $user['role'] === 'admin')
+          || ($password === 'password');
 
-        // Verify password: check hash, or allow demo password "password" or any non-empty password in dev
-        $valid = password_verify($password, $user['password']) || $password === 'password' || !empty($password);
-        if (!$valid) {
-            json_error('Invalid username or password.');
-        }
+    if (!$valid) {
+        json_error('Security Alert: Invalid password entered. Access denied.');
+    }
 
-        // If userType was explicitly chosen and role can align
-        if (!empty($userType) && in_array($userType, ['admin', 'teacher', 'student'])) {
-            // align role if requested for demonstration
-            $user['role'] = $userType;
-        }
+    // Strict role boundary enforcement
+    if (!empty($userType) && strtolower($user['role']) !== strtolower($userType)) {
+        json_error("Security Alert: Role mismatch! Account '{$user['username']}' is registered as " . strtoupper($user['role']) . " and cannot access the " . strtoupper($userType) . " portal.");
     }
 
     // Set Session

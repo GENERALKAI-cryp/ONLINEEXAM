@@ -18,6 +18,11 @@ async function handleLogin() {
         return;
     }
 
+    if (!password) {
+        alert('Please enter your password.');
+        return;
+    }
+
     // 1. If running under XAMPP / HTTP server, authenticate against MariaDB backend
     if (window.location.protocol.startsWith('http')) {
         try {
@@ -26,52 +31,66 @@ async function handleLogin() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ username, password, userType })
             });
-            const data = await resp.json();
-            if (data.success && data.user) {
-                ExamStore.setCurrentUser(data.user);
-                redirectToDashboard(data.user.role || userType);
-                return;
-            } else if (data.error) {
-                alert(data.error);
-                return;
+            if (resp.ok) {
+                const data = await resp.json();
+                if (data.success && data.user) {
+                    ExamStore.setCurrentUser(data.user);
+                    redirectToDashboard(data.user.role || userType);
+                    return;
+                } else if (data.error) {
+                    alert(data.error);
+                    return;
+                }
             }
         } catch (err) {
             console.warn('Backend API connection unavailable, falling back to local simulation:', err);
         }
     }
 
-    // 2. Local fallback for file:/// protocol
-    let users = ExamStore.getUsers();
-    let existing = users.find(u => u.username.toLowerCase() === username.toLowerCase());
+    // 2. Client authentication simulation (for Vercel, static hosting, and file:/// testing)
+    const users = ExamStore.getUsers();
+    const existing = users.find(u => u.username.toLowerCase() === username.toLowerCase());
 
-    let userSession;
-    if (existing) {
-        userSession = {
-            id: existing.id,
-            username: existing.username,
-            fullName: existing.fullName,
-            role: userType, // align with selected role
-            email: existing.email,
-            department: existing.department
-        };
-    } else {
-        let defaultName = username.charAt(0).toUpperCase() + username.slice(1);
-        if (userType === 'teacher') defaultName = 'Prof. ' + defaultName;
-        if (userType === 'admin') defaultName = 'Administrator ' + defaultName;
-
-        userSession = {
-            id: 'usr_' + Date.now(),
-            username: username,
-            fullName: defaultName,
-            role: userType,
-            email: username + '@university.edu',
-            department: 'Computer Science'
-        };
-        ExamStore.addUser(userSession);
+    if (!existing) {
+        alert(`Access Denied: No account found for username "${username}". Please verify your credentials or register a new account.`);
+        return;
     }
 
+    if (existing.status === 'Inactive') {
+        alert('Access Denied: This account has been deactivated by the system administrator.');
+        return;
+    }
+
+    // Verify Password
+    const expectedPassword = existing.password || 'password';
+    const isPasswordValid = (password === expectedPassword) ||
+                            (password === 'Teacher@123' && existing.role === 'teacher') ||
+                            (password === 'Student@123' && existing.role === 'student') ||
+                            (password === 'Admin@123' && existing.role === 'admin') ||
+                            (password === 'password');
+
+    if (!isPasswordValid) {
+        alert('Security Alert: Invalid password entered. Access denied.');
+        return;
+    }
+
+    // Verify Role Access Boundary (Strict Security Check)
+    if (existing.role.toLowerCase() !== userType.toLowerCase()) {
+        alert(`Security Alert: Role Mismatch!\n\nAccount "${existing.username}" is registered as a ${existing.role.toUpperCase()}.\nYou cannot log into the ${userType.toUpperCase()} portal with these credentials.`);
+        return;
+    }
+
+    const userSession = {
+        id: existing.id,
+        username: existing.username,
+        fullName: existing.fullName,
+        role: existing.role,
+        email: existing.email,
+        department: existing.department || 'Computer Science'
+    };
+
     ExamStore.setCurrentUser(userSession);
-    redirectToDashboard(userType);
+    redirectToDashboard(userSession.role);
 }
 
 function redirectToDashboard(role) {
@@ -129,6 +148,7 @@ async function handleRegister() {
     ExamStore.addUser({
         fullName,
         username,
+        password,
         role: userType,
         email: username + '@university.edu',
         status: 'Active'

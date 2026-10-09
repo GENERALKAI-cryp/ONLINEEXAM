@@ -424,11 +424,8 @@
         let securityArmed = false;
 
         function initAttendExam() {
-            let user = ExamStore.getCurrentUser();
-            if (!user || user.role !== 'student') {
-                user = { fullName: 'John Doe', role: 'student', username: 'johndoe', id: 'usr_s1', department: 'B.Tech Computer Science' };
-                ExamStore.setCurrentUser(user);
-            }
+            let user = AppNav.requireAuth(['student', 'admin']);
+            if (!user) return;
 
             const urlParams = new URLSearchParams(window.location.search);
             const examParam = urlParams.get('id') || urlParams.get('code');

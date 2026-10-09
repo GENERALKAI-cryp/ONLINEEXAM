@@ -132,18 +132,20 @@ CREATE TABLE `submission_answers` (
 -- Passwords below default to "password" (hashed using password_hash('password', PASSWORD_BCRYPT))
 -- ====================================================================
 
--- 1. Users (Admin, Teachers, Students)
--- Hash: $2y$10$4y9pB2z23sBvW98sXmJgG.fF1jJzH1p7L4y2B8yQhLqWkZmC6Q8y2 (equals "password")
+-- 1. Users (Official & Test Accounts)
+-- Standard password fallback: "password"
+-- Dedicated Teacher: teacher_test / Teacher@123
+-- Dedicated Student: student_test / Student@123
+-- Dedicated Admin: admin_test / Admin@123
 INSERT INTO `users` (`id`, `username`, `password`, `full_name`, `email`, `role`, `department`, `status`) VALUES
 (1, 'admin', '$2y$10$4y9pB2z23sBvW98sXmJgG.fF1jJzH1p7L4y2B8yQhLqWkZmC6Q8y2', 'Dr. Arthur Vance (Dean)', 'admin@university.edu', 'admin', 'Academic Administration', 'Active'),
-(2, 'rsmith', '$2y$10$4y9pB2z23sBvW98sXmJgG.fF1jJzH1p7L4y2B8yQhLqWkZmC6Q8y2', 'Prof. Robert Smith', 'r.smith@university.edu', 'teacher', 'Computer Science', 'Active'),
--- 1. Users (Standard university roles)
-INSERT INTO `users` (`id`, `username`, `password`, `full_name`, `email`, `role`, `department`, `status`) VALUES
-(1, 'admin', '$2y$10$4y9pB2z23sBvW98sXmJgG.fF1jJzH1p7L4y2B8yQhLqWkZmC6Q8y2', 'Dean / Admin Office', 'admin@university.edu', 'admin', 'Academic Administration', 'Active'),
-(2, 'rsmith', '$2y$10$4y9pB2z23sBvW98sXmJgG.fF1jJzH1p7L4y2B8yQhLqWkZmC6Q8y2', 'Prof. Robert Smith', 'r.smith@university.edu', 'teacher', 'Computer Science', 'Active'),
-(3, 'erostova', '$2y$10$4y9pB2z23sBvW98sXmJgG.fF1jJzH1p7L4y2B8yQhLqWkZmC6Q8y2', 'Dr. Elena Rostova', 'e.rostova@university.edu', 'teacher', 'Information Security', 'Active'),
-(4, 'johndoe', '$2y$10$4y9pB2z23sBvW98sXmJgG.fF1jJzH1p7L4y2B8yQhLqWkZmC6Q8y2', 'John Doe', 'john.doe@student.university.edu', 'student', 'B.Tech Computer Science', 'Active'),
-(5, 'janesmith', '$2y$10$4y9pB2z23sBvW98sXmJgG.fF1jJzH1p7L4y2B8yQhLqWkZmC6Q8y2', 'Jane Smith', 'jane.smith@student.university.edu', 'student', 'B.Tech Information Technology', 'Active');
+(2, 'admin_test', '$2y$10$4y9pB2z23sBvW98sXmJgG.fF1jJzH1p7L4y2B8yQhLqWkZmC6Q8y2', 'Dr. Arthur Vance (Admin Test)', 'admin.test@university.edu', 'admin', 'Academic Administration', 'Active'),
+(3, 'teacher_test', '$2y$10$4y9pB2z23sBvW98sXmJgG.fF1jJzH1p7L4y2B8yQhLqWkZmC6Q8y2', 'Prof. Sarah Jenkins (Teacher Test)', 'teacher.test@university.edu', 'teacher', 'Computer Science', 'Active'),
+(4, 'rsmith', '$2y$10$4y9pB2z23sBvW98sXmJgG.fF1jJzH1p7L4y2B8yQhLqWkZmC6Q8y2', 'Prof. Robert Smith', 'r.smith@university.edu', 'teacher', 'Computer Science', 'Active'),
+(5, 'erostova', '$2y$10$4y9pB2z23sBvW98sXmJgG.fF1jJzH1p7L4y2B8yQhLqWkZmC6Q8y2', 'Dr. Elena Rostova', 'e.rostova@university.edu', 'teacher', 'Information Security', 'Active'),
+(6, 'student_test', '$2y$10$4y9pB2z23sBvW98sXmJgG.fF1jJzH1p7L4y2B8yQhLqWkZmC6Q8y2', 'Alex Mercer (Student Test)', 'student.test@university.edu', 'student', 'B.Tech Computer Science', 'Active'),
+(7, 'johndoe', '$2y$10$4y9pB2z23sBvW98sXmJgG.fF1jJzH1p7L4y2B8yQhLqWkZmC6Q8y2', 'John Doe', 'john.doe@student.university.edu', 'student', 'B.Tech Computer Science', 'Active'),
+(8, 'janesmith', '$2y$10$4y9pB2z23sBvW98sXmJgG.fF1jJzH1p7L4y2B8yQhLqWkZmC6Q8y2', 'Jane Smith', 'jane.smith@student.university.edu', 'student', 'B.Tech Information Technology', 'Active');
 
 -- 2. Official Scheduled Exams
 INSERT INTO `exams` (`id`, `name`, `subject`, `date`, `time`, `duration`, `total_marks`, `exam_code`, `description`, `rules`, `exam_type`, `checking_mode`, `status`, `score_sheet_status`, `teacher_id`, `teacher_name`) VALUES

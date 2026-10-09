@@ -343,12 +343,8 @@
         }
 
         function initAdminDashboard() {
-            // Check admin session, fallback to admin demo user
-            let currentUser = ExamStore.getCurrentUser();
-            if (!currentUser || currentUser.role !== 'admin') {
-                currentUser = { fullName: 'Dr. Arthur Vance (Dean)', role: 'admin', username: 'admin' };
-                ExamStore.setCurrentUser(currentUser);
-            }
+            let currentUser = AppNav.requireAuth(['admin']);
+            if (!currentUser) return;
             AppNav.render('admin-dashboard');
 
             renderCounts();
