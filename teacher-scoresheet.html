@@ -12,13 +12,13 @@
 
     <div class="container">
         <!-- Header -->
-        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px; flex-wrap: wrap; gap: 15px;">
+        <div class="dashboard-banner-row">
             <div>
                 <h1 style="font-size: 26px; margin-bottom: 4px;">Faculty Score Sheet Management</h1>
                 <p style="color: var(--text-light); font-size: 14px; margin: 0;">Review class marks, adjust scores, and control public score sheet release to students.</p>
             </div>
             
-            <div style="display: flex; align-items: center; gap: 10px;">
+            <div class="banner-actions-row" style="align-items: center;">
                 <label style="font-size: 13px; font-weight: 600; margin: 0;">Examination:</label>
                 <select id="scoreExamSelector" class="form-control" style="width: auto; padding: 7px 14px; font-size: 13px;" onchange="loadExamScores()">
                     <!-- Options populated dynamically -->
@@ -39,7 +39,7 @@
                     <span style="font-size: 13px; color: var(--text-light);" id="sheetExamMeta">Subject · Total Marks: 100</span>
                 </div>
                 
-                <div style="display: flex; align-items: center; gap: 16px;">
+                <div class="scoresheet-control-panel" style="display: flex; align-items: center; gap: 16px; flex-wrap: wrap;">
                     <div>
                         <label style="font-size: 12px; font-weight: 600; display: block; margin-bottom: 4px;">Score Sheet State:</label>
                         <select id="sheetStatusSelect" class="form-control" style="width: auto; padding: 6px 12px; font-size: 13px; font-weight: 600;" onchange="handleSheetStatusChange()">
@@ -49,7 +49,7 @@
                         </select>
                     </div>
 
-                    <div id="publishActionContainer">
+                    <div id="publishActionContainer" style="margin-top: 18px;">
                         <!-- Dynamic publish/unpublish button -->
                     </div>
                 </div>

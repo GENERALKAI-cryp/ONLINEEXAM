@@ -661,3 +661,151 @@
 [data-theme="dark"] .notice-info { background: #1e3a8a; color: #dbeafe; border-color: #1d4ed8; }
 [data-theme="dark"] .notice-warning { background: #78350f; color: #fef3c7; border-color: #b45309; }
 [data-theme="dark"] .notice-success { background: #064e3b; color: #d1fae5; border-color: #047857; }
+
+/* ============================================================
+   MOBILE RESPONSIVE COMPONENT ADJUSTMENTS (UI/UX PRO MAX)
+   ============================================================ */
+
+@media (max-width: 768px) {
+    /* Stats Grid */
+    .stats-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+        margin-bottom: 20px;
+    }
+    .stat-card {
+        padding: 14px 16px;
+    }
+    .stat-icon {
+        width: 42px;
+        height: 42px;
+        font-size: 20px;
+    }
+    .stat-value {
+        font-size: 20px;
+    }
+
+    /* Section Toolbars & Filters */
+    .section-toolbar {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+    }
+    .search-filter-box {
+        max-width: 100%;
+        flex-direction: column;
+        width: 100%;
+        gap: 8px;
+    }
+    .search-input, .filter-select {
+        width: 100%;
+    }
+
+    /* Responsive Data Tables */
+    .table-container {
+        width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        margin-bottom: 16px;
+    }
+    .data-table {
+        min-width: 580px;
+    }
+    .data-table th, .data-table td {
+        padding: 10px 12px;
+        font-size: 13px;
+    }
+
+    /* Candidate Grid */
+    .candidate-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+
+    /* Modals & Dialogs */
+    .modal-backdrop {
+        padding: 12px;
+        align-items: center;
+    }
+    .modal-box {
+        width: 100%;
+        max-width: 100%;
+        max-height: 92vh;
+        border-radius: 12px;
+    }
+    .modal-header {
+        padding: 14px 18px;
+    }
+    .modal-body {
+        padding: 16px;
+    }
+    .modal-footer {
+        padding: 12px 16px;
+        flex-direction: column-reverse;
+        gap: 8px;
+    }
+    .modal-footer .btn {
+        width: 100%;
+    }
+
+    /* Distraction-Free Exam Screen */
+    .exam-header-bar {
+        padding: 10px 14px;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+    .timer-widget {
+        padding: 6px 12px;
+        font-size: 15px;
+    }
+    .question-workspace-card {
+        padding: 18px 14px;
+    }
+    .question-text-title {
+        font-size: 16px;
+        line-height: 1.5;
+        margin-bottom: 16px;
+    }
+    .student-option-card {
+        padding: 12px 14px;
+        gap: 10px;
+    }
+    .option-letter-badge {
+        width: 26px;
+        height: 26px;
+        font-size: 12px;
+    }
+
+    /* Toast notifications on mobile */
+    .toast-container {
+        top: 10px;
+        left: 12px;
+        right: 12px;
+    }
+    .toast-msg {
+        min-width: unset;
+        max-width: 100%;
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    /* Score sheet control panel */
+    .scoresheet-control-panel {
+        flex-direction: column;
+        align-items: stretch !important;
+        width: 100%;
+        gap: 12px !important;
+    }
+    .scoresheet-control-panel > div {
+        width: 100%;
+    }
+    .scoresheet-control-panel select {
+        width: 100% !important;
+    }
+    .scoresheet-control-panel .btn {
+        width: 100%;
+    }
+}
+

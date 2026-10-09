@@ -70,28 +70,68 @@ const AppNav = {
         const roleClass = `role-${user.role}`;
         const roleLabel = user.role.toUpperCase();
 
+        header.className = 'app-header';
         header.innerHTML = `
-            <div class="logo-area">
-                <div class="logo-placeholder">U</div>
-                <div>
-                    <h2 style="font-size: 18px; margin: 0; line-height: 1.2;">University Portal</h2>
-                    <span style="font-size: 11px; color: var(--text-light); text-transform: uppercase; letter-spacing: 0.5px;">Examination Management</span>
+            <div class="header-top-row">
+                <a href="${user.role === 'admin' ? 'admin-dashboard.html' : user.role === 'teacher' ? 'teacher-dashboard.html' : 'student-dashboard.html'}" class="logo-area" style="text-decoration: none; color: inherit;">
+                    <div class="logo-placeholder">U</div>
+                    <div>
+                        <h2 style="font-size: 17px; margin: 0; line-height: 1.2;">University Portal</h2>
+                        <span style="font-size: 11px; color: var(--text-light); text-transform: uppercase; letter-spacing: 0.5px;">Examination System</span>
+                    </div>
+                </a>
+
+                <div class="header-right-actions">
+                    <button class="mobile-nav-toggle" id="mobileNavToggle" aria-label="Toggle navigation menu">
+                        <span class="hamburger-icon">☰</span>
+                    </button>
                 </div>
             </div>
 
-            <nav class="app-nav">
-                ${navLinks}
-            </nav>
+            <div class="nav-collapsible-wrapper" id="navCollapsibleWrapper">
+                <nav class="app-nav">
+                    ${navLinks}
+                </nav>
 
-            <div style="display: flex; align-items: center; gap: 12px;">
-                <div class="user-profile-chip">
-                    <span class="user-avatar-sm">${(user.fullName || user.username || 'U')[0].toUpperCase()}</span>
-                    <span>${user.fullName || user.username}</span>
-                    <span class="role-badge ${roleClass}">${roleLabel}</span>
+                <div class="nav-user-section">
+                    <div class="user-profile-chip">
+                        <span class="user-avatar-sm">${(user.fullName || user.username || 'U')[0].toUpperCase()}</span>
+                        <span class="user-name-text">${escapeHtml(user.fullName || user.username)}</span>
+                        <span class="role-badge ${roleClass}">${roleLabel}</span>
+                    </div>
+                    <button onclick="ExamStore.logout()" class="btn btn-secondary btn-sm btn-logout" title="Sign out">Logout</button>
                 </div>
-                <button onclick="ExamStore.logout()" class="btn btn-secondary btn-sm" title="Sign out" style="padding: 6px 12px;">Logout</button>
             </div>
         `;
+
+        // Mobile menu toggle event
+        const toggleBtn = header.querySelector('#mobileNavToggle');
+        const navWrapper = header.querySelector('#navCollapsibleWrapper');
+        if (toggleBtn && navWrapper) {
+            toggleBtn.onclick = (e) => {
+                e.stopPropagation();
+                const isOpen = navWrapper.classList.toggle('nav-open');
+                toggleBtn.querySelector('.hamburger-icon').textContent = isOpen ? '✕' : '☰';
+            };
+
+            // Close when clicking nav links
+            navWrapper.querySelectorAll('.nav-link').forEach(link => {
+                link.addEventListener('click', () => {
+                    navWrapper.classList.remove('nav-open');
+                    const icon = toggleBtn.querySelector('.hamburger-icon');
+                    if (icon) icon.textContent = '☰';
+                });
+            });
+
+            // Close when clicking outside
+            document.addEventListener('click', (e) => {
+                if (!header.contains(e.target)) {
+                    navWrapper.classList.remove('nav-open');
+                    const icon = toggleBtn.querySelector('.hamburger-icon');
+                    if (icon) icon.textContent = '☰';
+                }
+            });
+        }
     },
 
     getStatusBadge(status) {
