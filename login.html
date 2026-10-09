@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Online Examination System</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="app-styles.css">
+</head>
+<body>
+    <header>
+        <div class="logo-area">
+            <div class="logo-placeholder">U</div>
+            <h2>University Portal</h2>
+        </div>
+        <a href="index.html" class="btn btn-secondary">Home</a>
+    </header>
+
+    <div class="container">
+        <div class="card center-box">
+            <h2>Account Login</h2>
+            <p>Enter your credentials to access your portal.</p>
+            
+            <form action="javascript:void(0);" onsubmit="handleLogin()">
+                <div class="form-group">
+                    <label for="userType">User Type</label>
+                    <select id="userType" class="form-control" required>
+                        <option value="" disabled selected>Select user type</option>
+                        <option value="student">Student</option>
+                        <option value="teacher">Teacher</option>
+                        <option value="admin">Administrator</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" class="form-control" placeholder="Enter username (e.g. admin, rsmith, johndoe)" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" class="form-control" placeholder="Enter password" required>
+                    <div style="text-align: right; margin-top: 8px;">
+                        <a href="forgot-password.html" style="color: var(--primary-color); font-size: 14px; text-decoration: none; font-weight: 500;">Forgot Password?</a>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn full-width">Login</button>
+            </form>
+
+            <div style="margin-top: 20px; padding: 12px; background: var(--secondary-color); border-radius: 8px; font-size: 12px; text-align: left; color: var(--text-light);">
+                <strong>Demo Quick-Logins:</strong><br>
+                • <strong>Admin:</strong> Choose <em>Administrator</em> (Username: <code>admin</code>)<br>
+                • <strong>Teacher:</strong> Choose <em>Teacher</em> (Username: <code>rsmith</code>)<br>
+                • <strong>Student:</strong> Choose <em>Student</em> (Username: <code>johndoe</code>)
+            </div>
+
+            <p style="margin-top: 20px; font-size: 14px;">
+                Don't have an account? <a href="register.html" style="color: var(--primary-color); text-decoration: none; font-weight: 500;">Register here</a>
+            </p>
+        </div>
+    </div>
+
+    <script src="exam-store.js"></script>
+    <script src="app-utils.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>

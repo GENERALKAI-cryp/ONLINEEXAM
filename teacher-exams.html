@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Examinations - Online Examination System</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="app-styles.css">
+</head>
+<body>
+    <header></header>
+
+    <div class="container">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 15px;">
+            <div>
+                <h1 style="font-size: 26px; margin-bottom: 4px;">Examinations Roster</h1>
+                <p style="color: var(--text-light); font-size: 14px; margin: 0;">Manage your active, scheduled, and completed course assessments.</p>
+            </div>
+            <a href="teacher-create-exam.html" class="btn">+ Create New Exam</a>
+        </div>
+
+        <div class="card">
+            <div class="section-toolbar">
+                <div class="search-filter-box">
+                    <input type="text" id="searchExamInput" class="search-input" placeholder="Search by exam title or exam code..." oninput="renderExams()">
+                    <select id="filterStatus" class="filter-select" onchange="renderExams()">
+                        <option value="all">All Statuses</option>
+                        <option value="Published / Active">Published / Active</option>
+                        <option value="Draft">Draft</option>
+                        <option value="Completed">Completed</option>
+                        <option value="Closed">Closed</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="table-responsive">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Exam Name</th>
+                            <th>Student Access Code</th>
+                            <th>Type & Mode</th>
+                            <th>Date & Time</th>
+                            <th>Total Marks</th>
+                            <th>Status</th>
+                            <th>Score Sheet</th>
+                            <th style="text-align: right;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="examsTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script src="exam-store.js"></script>
+    <script src="app-utils.js"></script>
+    <script src="script.js"></script>
+    <script>
+        function initTeacherExams() {
+            let user = ExamStore.getCurrentUser();
+            if (!user || user.role !== 'teacher') {
+                user = { fullName: 'Prof. Robert Smith', role: 'teacher', username: 'rsmith' };
+                ExamStore.setCurrentUser(user);
+            }
+            AppNav.render('teacher-exams');
+            renderExams();
+        }
+
+        function renderExams() {
+            const query = (document.getElementById('searchExamInput').value || '').toLowerCase();
+            const filter = document.getElementById('filterStatus').value;
+            let exams = ExamStore.getExams();
+
+            if (filter !== 'all') {
+                exams = exams.filter(e => e.status === filter);
+            }
+            if (query) {
+                exams = exams.filter(e => 
+                    e.name.toLowerCase().includes(query) || 
+                    (e.examCode && e.examCode.toLowerCase().includes(query))
+                );
+            }
+
+            const tbody = document.getElementById('examsTableBody');
+            if (exams.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="8" class="empty-state-box">No examinations matching your criteria.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = exams.map(e => `
+                <tr>
+                    <td>
+                        <strong>${escapeHtml(e.name)}</strong>
+                        <div style="font-size: 12px; color: var(--text-light);">${escapeHtml(e.subject)} · ${e.duration} mins</div>
+                    </td>
+                    <td>
+                        <div style="display: flex; align-items: center; gap: 6px;">
+                            <span class="exam-code-box" style="padding: 2px 8px; font-size: 13px;">${escapeHtml(e.examCode)}</span>
+                            <button class="btn-copy" onclick="copyCode('${e.examCode}')" title="Copy code">📋</button>
+                        </div>
+                    </td>
+                    <td>
+                        <span style="font-size: 12px; font-weight: 600;">
+                            ${e.examType === 'jpeg' ? '📷 JPEG Answer' : '◉ MCQ (' + (e.checkingMode === 'auto' ? 'Auto' : 'Manual') + ')'}
+                        </span>
+                    </td>
+                    <td>${e.date} at ${e.time}</td>
+                    <td><strong>${e.totalMarks}</strong></td>
+                    <td>${AppNav.getStatusBadge(e.status)}</td>
+                    <td>${AppNav.getStatusBadge(e.scoreSheetStatus || 'Not Evaluated')}</td>
+                    <td style="text-align: right;">
+                        <a href="teacher-correct-exam.html?id=${e.id}" class="btn btn-secondary btn-sm" title="Grade answer sheets">Correct</a>
+                        <a href="teacher-scoresheet.html?id=${e.id}" class="btn btn-secondary btn-sm" title="Manage scores & publish">Score Sheet</a>
+                        <button class="btn btn-danger btn-sm" onclick="deleteExam('${e.id}')" title="Delete">🗑️</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function copyCode(code) {
+            navigator.clipboard.writeText(code).then(() => {
+                Toast.show('Exam Code copied: ' + code, 'success');
+            }).catch(() => {
+                Toast.show('Code: ' + code, 'info');
+            });
+        }
+
+        function deleteExam(id) {
+            if (confirm('Are you sure you want to delete this examination?')) {
+                ExamStore.deleteExam(id);
+                Toast.show('Exam removed', 'danger');
+                renderExams();
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', initTeacherExams);
+    </script>
+</body>
+</html>

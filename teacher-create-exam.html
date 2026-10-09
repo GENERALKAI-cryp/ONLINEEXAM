@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Exam - Online Examination System</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="app-styles.css">
+</head>
+<body>
+    <header></header>
+
+    <div class="container" style="max-width: 950px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 15px;">
+            <div>
+                <h1 style="font-size: 26px; margin-bottom: 4px;">Create New Examination</h1>
+                <p style="color: var(--text-light); font-size: 14px; margin: 0;">Configure exam parameters, assign a unique student access code, and author questions.</p>
+            </div>
+            <a href="teacher-dashboard.html" class="btn btn-secondary btn-sm">← Back to Dashboard</a>
+        </div>
+
+        <form id="createExamForm" onsubmit="return false;">
+            <!-- 1. EXAM DETAILS & UNIQUE ACCESS CODE -->
+            <div class="card" style="margin-bottom: 24px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; border-bottom: 1px solid var(--border-color); padding-bottom: 14px; flex-wrap: wrap; gap: 10px;">
+                    <h3 style="margin: 0; font-size: 18px;">1. Examination Specifications</h3>
+                    
+                    <!-- UNIQUE EXAM CODE DISPLAY -->
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span style="font-size: 13px; color: var(--text-light);">Unique Student Access Code:</span>
+                        <div class="exam-code-box">
+                            <span id="displayExamCode">LOAD...</span>
+                            <button type="button" class="btn-copy" onclick="copyExamCode()" title="Copy Code">📋</button>
+                            <button type="button" class="btn-copy" onclick="regenerateExamCode()" title="Generate New Code">🔄</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="notice-banner notice-info">
+                    <span>🔑 <strong>Exam Code Rule:</strong> Students can ONLY enter this examination by supplying this exact unique code. Share this code with your class prior to exam commencement.</span>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 16px;">
+                    <div class="form-group">
+                        <label for="examName">Exam Title *</label>
+                        <input type="text" id="examName" class="form-control" placeholder="e.g. Distributed Operating Systems Mid-Semester" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="examSubject">Academic Subject / Course *</label>
+                        <input type="text" id="examSubject" class="form-control" placeholder="e.g. CS-401 Computer Networks" required>
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px;">
+                    <div class="form-group">
+                        <label for="examDate">Exam Date *</label>
+                        <input type="date" id="examDate" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="examTime">Start Time *</label>
+                        <input type="time" id="examTime" class="form-control" value="10:00" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="examDuration">Duration (Minutes) *</label>
+                        <input type="number" id="examDuration" class="form-control" value="45" min="5" max="300" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="examTotalMarks">Total Marks *</label>
+                        <input type="number" id="examTotalMarks" class="form-control" value="50" min="1" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="examDesc">Exam Description</label>
+                    <textarea id="examDesc" class="form-control" rows="2" placeholder="Brief outline of syllabus covered in this test..."></textarea>
+                </div>
+
+                <!-- DEDICATED RULES BOX -->
+                <div class="form-group">
+                    <label for="examRules" style="display: flex; justify-content: space-between; align-items: center;">
+                        <span>Dedicated Examination Rules Box *</span>
+                        <button type="button" onclick="loadDefaultRulesTemplate()" class="btn-sm btn-secondary" style="font-size: 11px; padding: 3px 8px; border: none; cursor: pointer;">Load Standard Rules Template</button>
+                    </label>
+                    <textarea id="examRules" class="form-control" rows="5" style="font-family: monospace; font-size: 13px;" placeholder="Enter instructions and strict regulations students must follow before and during this test..."></textarea>
+                    <span style="font-size: 12px; color: var(--text-light); margin-top: 4px; display: block;">Students will be mandated to review and agree to these rules prior to starting the timer.</span>
+                </div>
+            </div>
+
+            <!-- 2. EXAM TYPE SELECTION -->
+            <div class="card" style="margin-bottom: 24px;">
+                <h3 style="margin: 0 0 16px 0; font-size: 18px;">2. Examination Type & Answer Delivery Mode</h3>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px;">
+                    <label class="exam-type-card active" id="typeCardMcq" onclick="selectExamType('mcq')">
+                        <input type="radio" name="examTypeSelect" value="mcq" checked style="display: none;">
+                        <div style="font-size: 26px; margin-bottom: 8px;">◉</div>
+                        <h4 style="margin: 0 0 6px 0;">MCQ EXAM</h4>
+                        <p style="margin: 0; font-size: 13px; color: var(--text-light);">Objective format with 4 options per question. Supports instant automatic scoring or manual review.</p>
+                    </label>
+
+                    <label class="exam-type-card" id="typeCardJpeg" onclick="selectExamType('jpeg')">
+                        <input type="radio" name="examTypeSelect" value="jpeg" style="display: none;">
+                        <div style="font-size: 26px; margin-bottom: 8px;">📷</div>
+                        <h4 style="margin: 0 0 6px 0;">JPEG ANSWER EXAM</h4>
+                        <p style="margin: 0; font-size: 13px; color: var(--text-light);">Subjective/mathematical problems where students write answers on paper and upload JPEG photos.</p>
+                    </label>
+                </div>
+
+                <!-- MCQ CHECKING MODE SELECTION (ONLY FOR MCQ) -->
+                <div id="mcqCheckingModeSection" style="padding: 16px; background: var(--secondary-color); border-radius: 8px; border: 1px solid var(--border-color);">
+                    <label style="font-weight: 600; font-size: 14px; margin-bottom: 8px; display: block;">Answer Checking Mode:</label>
+                    <div style="display: flex; gap: 20px;">
+                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 14px;">
+                            <input type="radio" name="checkingMode" value="auto" checked>
+                            <strong>Automatic Checking</strong> (System auto-grades based on selected correct answer)
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 14px;">
+                            <input type="radio" name="checkingMode" value="manual">
+                            <strong>Manual Answer Sheet Checking</strong> (Instructor manually reviews submissions)
+                        </label>
+                    </div>
+                </div>
+
+                <!-- JPEG NOTICE (ONLY FOR JPEG) -->
+                <div id="jpegWorkflowNotice" style="display: none; padding: 16px; background: #faf5ff; border: 1px solid #e9d5ff; border-radius: 8px; color: #581c87;">
+                    <h4 style="margin: 0 0 6px 0; color: #7e22ce;">📷 JPEG Workflow Overview</h4>
+                    <p style="margin: 0; font-size: 13px;">
+                        For this exam type, you specify subjective questions with allocated marks. Students will take high-resolution JPEG photos of their handwritten sheets and upload them. You will then use the dedicated <strong>Correct Exams</strong> interface to inspect the sheets and award marks question-wise.
+                    </p>
+                </div>
+            </div>
+
+            <!-- 3. QUESTION CREATION SECTION -->
+            <div class="card" style="margin-bottom: 24px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; border-bottom: 1px solid var(--border-color); padding-bottom: 14px;">
+                    <div>
+                        <h3 style="margin: 0; font-size: 18px;">3. Question Bank Authoring</h3>
+                        <span style="font-size: 13px; color: var(--text-light);" id="questionCountText">0 questions created</span>
+                    </div>
+                    <button type="button" class="btn btn-sm" onclick="addQuestionCard()">+ Add Question</button>
+                </div>
+
+                <!-- Dynamic Questions Container -->
+                <div id="questionsContainer"></div>
+
+                <div style="text-align: center; margin-top: 16px;">
+                    <button type="button" class="btn btn-secondary btn-sm" onclick="addQuestionCard()">+ Add Another Question</button>
+                </div>
+            </div>
+
+            <!-- 4. ACTIONS BAR -->
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 16px 0;">
+                <a href="teacher-dashboard.html" class="btn btn-secondary">Cancel</a>
+                <div style="display: flex; gap: 12px;">
+                    <button type="button" class="btn btn-secondary" onclick="submitExam('Draft')">Save as Draft</button>
+                    <button type="button" class="btn" onclick="submitExam('Published / Active')">✓ Publish Exam to Students</button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <style>
+        .exam-type-card {
+            border: 2px solid var(--border-color);
+            border-radius: 10px;
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            background: var(--card-bg);
+            text-align: center;
+        }
+        .exam-type-card:hover {
+            border-color: var(--primary-color);
+        }
+        .exam-type-card.active {
+            border-color: var(--primary-color);
+            background: rgba(79, 70, 229, 0.04);
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.1);
+        }
+    </style>
+
+    <script src="exam-store.js"></script>
+    <script src="app-utils.js"></script>
+    <script src="script.js"></script>
+    <script>
+        let currentExamCode = '';
+        let currentExamType = 'mcq';
+        let questionsList = [];
+
+        function initCreateExam() {
+            let user = ExamStore.getCurrentUser();
+            if (!user || user.role !== 'teacher') {
+                user = { fullName: 'Prof. Robert Smith', role: 'teacher', username: 'rsmith' };
+                ExamStore.setCurrentUser(user);
+            }
+            AppNav.render('teacher-create-exam');
+
+            // Set default date to tomorrow
+            const tomorrow = new Date();
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            document.getElementById('examDate').value = tomorrow.toISOString().split('T')[0];
+
+            regenerateExamCode();
+            loadDefaultRulesTemplate();
+
+            // Add first 2 starter questions
+            addQuestionCard();
+            addQuestionCard();
+        }
+
+        function regenerateExamCode() {
+            currentExamCode = ExamStore.generateExamCode();
+            document.getElementById('displayExamCode').textContent = currentExamCode;
+        }
+
+        function copyExamCode() {
+            navigator.clipboard.writeText(currentExamCode).then(() => {
+                Toast.show('Exam Code copied to clipboard: ' + currentExamCode, 'success');
+            }).catch(() => {
+                Toast.show('Exam Code: ' + currentExamCode, 'info');
+            });
+        }
+
+        function loadDefaultRulesTemplate() {
+            document.getElementById('examRules').value = ExamStore.getDefaultRules();
+        }
+
+        function selectExamType(type) {
+            currentExamType = type;
+            document.getElementById('typeCardMcq').classList.toggle('active', type === 'mcq');
+            document.getElementById('typeCardJpeg').classList.toggle('active', type === 'jpeg');
+            
+            document.getElementById('mcqCheckingModeSection').style.display = type === 'mcq' ? 'block' : 'none';
+            document.getElementById('jpegWorkflowNotice').style.display = type === 'jpeg' ? 'block' : 'none';
+
+            // Re-render all existing question cards to match type
+            renderAllQuestions();
+        }
+
+        function addQuestionCard() {
+            const newQ = {
+                id: 'q_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+                text: '',
+                optionA: '',
+                optionB: '',
+                optionC: '',
+                optionD: '',
+                correctAnswer: 0,
+                marks: 10
+            };
+            questionsList.push(newQ);
+            renderAllQuestions();
+        }
+
+        function removeQuestion(index) {
+            if (questionsList.length <= 1) {
+                Toast.show('Examination must have at least one question', 'warning');
+                return;
+            }
+            questionsList.splice(index, 1);
+            renderAllQuestions();
+        }
+
+        function renderAllQuestions() {
+            const container = document.getElementById('questionsContainer');
+            container.innerHTML = '';
+
+            questionsList.forEach((q, idx) => {
+                const item = document.createElement('div');
+                item.className = 'question-builder-item';
+                const qNumStr = String(idx + 1).padStart(2, '0');
+
+                if (currentExamType === 'mcq') {
+                    item.innerHTML = `
+                        <div class="qb-header">
+                            <span class="qb-num">Question ${qNumStr}</span>
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <div style="display: flex; align-items: center; gap: 6px;">
+                                    <label style="font-size: 13px; font-weight: 600; margin: 0;">Marks:</label>
+                                    <input type="number" class="form-control" style="width: 70px; padding: 4px 8px; font-size: 13px;" value="${q.marks}" min="1" onchange="questionsList[${idx}].marks = parseInt(this.value) || 1">
+                                </div>
+                                <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeQuestion(${idx})">Remove</button>
+                            </div>
+                        </div>
+
+                        <div class="form-group" style="margin-bottom: 12px;">
+                            <label style="font-size: 13px;">Question Text *</label>
+                            <textarea class="form-control" rows="2" placeholder="Enter question..." oninput="questionsList[${idx}].text = this.value">${escapeHtml(q.text)}</textarea>
+                        </div>
+
+                        <div class="qb-options-grid">
+                            <div class="form-group" style="margin: 0;">
+                                <label style="font-size: 12px;">Option A *</label>
+                                <input type="text" class="form-control" placeholder="Option A text" value="${escapeHtml(q.optionA)}" oninput="questionsList[${idx}].optionA = this.value">
+                            </div>
+                            <div class="form-group" style="margin: 0;">
+                                <label style="font-size: 12px;">Option B *</label>
+                                <input type="text" class="form-control" placeholder="Option B text" value="${escapeHtml(q.optionB)}" oninput="questionsList[${idx}].optionB = this.value">
+                            </div>
+                            <div class="form-group" style="margin: 0;">
+                                <label style="font-size: 12px;">Option C *</label>
+                                <input type="text" class="form-control" placeholder="Option C text" value="${escapeHtml(q.optionC)}" oninput="questionsList[${idx}].optionC = this.value">
+                            </div>
+                            <div class="form-group" style="margin: 0;">
+                                <label style="font-size: 12px;">Option D *</label>
+                                <input type="text" class="form-control" placeholder="Option D text" value="${escapeHtml(q.optionD)}" oninput="questionsList[${idx}].optionD = this.value">
+                            </div>
+                        </div>
+
+                        <div style="display: flex; align-items: center; gap: 10px; margin-top: 14px;">
+                            <label style="font-size: 13px; font-weight: 600; margin: 0;">Correct Answer:</label>
+                            <select class="form-control" style="width: auto; padding: 6px 12px; font-size: 13px;" onchange="questionsList[${idx}].correctAnswer = parseInt(this.value)">
+                                <option value="0" ${q.correctAnswer === 0 ? 'selected' : ''}>Option A</option>
+                                <option value="1" ${q.correctAnswer === 1 ? 'selected' : ''}>Option B</option>
+                                <option value="2" ${q.correctAnswer === 2 ? 'selected' : ''}>Option C</option>
+                                <option value="3" ${q.correctAnswer === 3 ? 'selected' : ''}>Option D</option>
+                            </select>
+                            <span style="font-size: 12px; color: var(--text-light);">(Used for answer key evaluation)</span>
+                        </div>
+                    `;
+                } else {
+                    // JPEG Answer Exam
+                    item.innerHTML = `
+                        <div class="qb-header">
+                            <span class="qb-num">Question ${qNumStr} [Handwritten JPEG Answer]</span>
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <div style="display: flex; align-items: center; gap: 6px;">
+                                    <label style="font-size: 13px; font-weight: 600; margin: 0;">Marks:</label>
+                                    <input type="number" class="form-control" style="width: 70px; padding: 4px 8px; font-size: 13px;" value="${q.marks}" min="1" onchange="questionsList[${idx}].marks = parseInt(this.value) || 1">
+                                </div>
+                                <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeQuestion(${idx})">Remove</button>
+                            </div>
+                        </div>
+
+                        <div class="form-group" style="margin-bottom: 12px;">
+                            <label style="font-size: 13px;">Descriptive / Problem Question Text *</label>
+                            <textarea class="form-control" rows="3" placeholder="Enter problem statement, derivation instructions, or diagram requirements..." oninput="questionsList[${idx}].text = this.value">${escapeHtml(q.text)}</textarea>
+                        </div>
+
+                        <div style="padding: 10px 14px; background: var(--secondary-color); border-radius: 6px; font-size: 12px; color: var(--text-light); display: flex; align-items: center; gap: 8px;">
+                            <span>📷</span>
+                            <span>Student will upload their handwritten answer sheet as a JPEG image for this question. You will manually assign marks up to <strong>${q.marks} marks</strong> during evaluation.</span>
+                        </div>
+                    `;
+                }
+                container.appendChild(item);
+            });
+
+            document.getElementById('questionCountText').textContent = `${questionsList.length} question(s) configured`;
+        }
+
+        function submitExam(targetStatus) {
+            const name = document.getElementById('examName').value.trim();
+            const subject = document.getElementById('examSubject').value.trim();
+            const date = document.getElementById('examDate').value;
+            const time = document.getElementById('examTime').value;
+            const duration = parseInt(document.getElementById('examDuration').value) || 30;
+            const totalMarks = parseInt(document.getElementById('examTotalMarks').value) || 50;
+            const description = document.getElementById('examDesc').value.trim();
+            const rules = document.getElementById('examRules').value.trim();
+            const checkingMode = document.querySelector('input[name="checkingMode"]:checked')?.value || 'auto';
+
+            if (!name || !subject || !date) {
+                Toast.show('Please fill in Exam Name, Subject, and Date', 'warning');
+                return;
+            }
+
+            // Validate questions
+            for (let i = 0; i < questionsList.length; i++) {
+                const q = questionsList[i];
+                if (!q.text.trim()) {
+                    Toast.show(`Question ${i + 1} text cannot be empty`, 'warning');
+                    return;
+                }
+                if (currentExamType === 'mcq') {
+                    if (!q.optionA.trim() || !q.optionB.trim()) {
+                        Toast.show(`Question ${i + 1} must have at least Option A and Option B filled`, 'warning');
+                        return;
+                    }
+                }
+            }
+
+            const currentUser = ExamStore.getCurrentUser();
+
+            const newExam = ExamStore.createExam({
+                name,
+                subject,
+                date,
+                time,
+                duration,
+                totalMarks,
+                examCode: currentExamCode,
+                description,
+                rules,
+                examType: currentExamType,
+                checkingMode: currentExamType === 'mcq' ? checkingMode : 'manual',
+                status: targetStatus,
+                teacherName: currentUser ? currentUser.fullName : 'Faculty Teacher',
+                questions: questionsList
+            });
+
+            Toast.show(`Exam successfully saved as ${targetStatus}!`, 'success');
+            setTimeout(() => {
+                window.location.href = 'teacher-exams.html';
+            }, 1000);
+        }
+
+        document.addEventListener('DOMContentLoaded', initCreateExam);
+    </script>
+</body>
+</html>

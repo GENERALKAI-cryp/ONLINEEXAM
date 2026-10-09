@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Results - Online Examination System</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="app-styles.css">
+    <style>
+        .score-pill-published {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: #ecfdf5;
+            color: #065f46;
+            border: 1px solid #a7f3d0;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-weight: 700;
+            font-size: 13px;
+        }
+        [data-theme="dark"] .score-pill-published {
+            background: #064e3b;
+            color: #d1fae5;
+            border-color: #047857;
+        }
+        .score-pill-pending {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: #fffbeb;
+            color: #92400e;
+            border: 1px solid #fde68a;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 13px;
+        }
+        [data-theme="dark"] .score-pill-pending {
+            background: #78350f;
+            color: #fef3c7;
+            border-color: #b45309;
+        }
+        .breakdown-q-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 14px;
+        }
+    </style>
+</head>
+<body>
+    <header></header>
+
+    <div class="container">
+        <!-- Page Title & Header -->
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px; flex-wrap: wrap; gap: 15px;">
+            <div>
+                <h1 style="font-size: 26px; margin-bottom: 4px;">My Examination Results</h1>
+                <p style="color: var(--text-light); font-size: 14px; margin: 0;">Official transcripts, provisional score sheets, and status reports for attended examinations.</p>
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <a href="student-enter-exam.html" class="btn btn-secondary btn-sm">← Enter Another Exam</a>
+            </div>
+        </div>
+
+        <!-- Section 24 Notice: Score Visibility Policy -->
+        <div class="notice-banner notice-info" style="margin-bottom: 24px;">
+            <span>ℹ️ <strong>Result Publication Policy:</strong> Detailed score sheets are released exclusively after your instructor completes evaluation and officially updates the status to <em>Result Published</em>. Prior to publishing, scores remain confidential and display as <em>Under Correction</em> or <em>Result Pending</em>.</span>
+        </div>
+
+        <!-- Results Table Card -->
+        <div class="card">
+            <div class="section-toolbar">
+                <div class="search-filter-box">
+                    <input type="text" id="searchResultInput" class="search-input" placeholder="Search by exam name or code..." oninput="renderResultsTable()">
+                    <select id="filterResultStatus" class="filter-select" onchange="renderResultsTable()">
+                        <option value="all">All Statuses</option>
+                        <option value="Result Published">Result Published</option>
+                        <option value="Under Correction">Under Correction</option>
+                        <option value="Submitted">Submitted / Pending</option>
+                        <option value="Failed — Security Violation">Security Violations</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="table-responsive">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Examination Name</th>
+                            <th>Exam Code</th>
+                            <th>Date / Attended</th>
+                            <th>Exam Type</th>
+                            <th>Attempt Status</th>
+                            <th>Score / Visibility</th>
+                            <th style="text-align: right;">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="resultsTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- 1. DETAILED SCORE SHEET MODAL (Section 24: For Published Results Only) -->
+    <div class="modal-overlay" id="scoreModal">
+        <div class="modal-card modal-lg">
+            <div class="modal-header">
+                <div>
+                    <h3 style="margin: 0 0 2px 0;" id="scoreModalTitle">Score Sheet</h3>
+                    <span style="font-size: 12px; color: var(--text-light);" id="scoreModalMeta">Official University Transcript</span>
+                </div>
+                <button class="modal-close-btn" onclick="closeScoreModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <!-- Summary Card -->
+                <div style="background: var(--secondary-color); border: 1px solid var(--border-color); border-radius: 10px; padding: 20px; margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+                    <div>
+                        <div style="font-size: 12px; color: var(--text-light); text-transform: uppercase; font-weight: 600;">Total Score Awarded</div>
+                        <div style="font-size: 32px; font-weight: 800; color: #10b981;" id="scoreModalFinalScore">0 / 0</div>
+                        <div style="font-size: 13px; color: var(--text-light);" id="scoreModalPercentage">Percentage: 0%</div>
+                    </div>
+                    <div style="text-align: right;">
+                        <span class="status-badge badge-published" style="font-size: 13px; padding: 6px 14px;">✓ Result Officially Published</span>
+                        <div style="font-size: 12px; color: var(--text-light); margin-top: 6px;" id="scoreModalInstructor">Evaluated by Course Faculty</div>
+                    </div>
+                </div>
+
+                <h4 style="margin: 0 0 14px 0; font-size: 16px;">Question-Wise Marking Breakdown</h4>
+                <div id="scoreModalQuestionList">
+                    <!-- Populated dynamically -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary btn-sm" onclick="closeScoreModal()">Close Score Sheet</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. SECURITY VIOLATION REPORT MODAL -->
+    <div class="modal-overlay" id="violationModal">
+        <div class="modal-card" style="max-width: 520px;">
+            <div class="modal-header" style="background: #fef2f2; border-bottom: 1px solid #fecaca;">
+                <h3 style="color: #b91c1c; margin: 0;">Security Violation Incident Record</h3>
+                <button class="modal-close-btn" onclick="closeViolationModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <div style="text-align: center; margin-bottom: 18px;">
+                    <div style="font-size: 40px; margin-bottom: 6px;">🛡️</div>
+                    <h4 style="margin: 0; color: #b91c1c; font-size: 18px;">Examination Terminated</h4>
+                    <span class="status-badge badge-violation" style="margin-top: 6px;">Failed — Security Violation</span>
+                </div>
+
+                <div style="background: var(--secondary-color); padding: 16px; border-radius: 8px; font-size: 13px; line-height: 1.6; margin-bottom: 18px;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                        <span style="color: var(--text-light);">Violation Reason:</span>
+                        <strong id="violModalReason" style="color: #b91c1c;">Tab Switching Detected</strong>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                        <span style="color: var(--text-light);">Timestamp:</span>
+                        <span id="violModalTime">--:--</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between;">
+                        <span style="color: var(--text-light);">Final Marks Awarded:</span>
+                        <strong style="color: #b91c1c;">0 / Total (Disqualified)</strong>
+                    </div>
+                </div>
+
+                <p style="font-size: 13px; color: var(--text-light); line-height: 1.5; margin: 0;">
+                    Under university guidelines, switching away from the examination window during an active test activates zero-tolerance proctoring failure. This record has been permanently archived.
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary btn-sm" onclick="closeViolationModal()">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. UNDER CORRECTION / RESULT PENDING EXPLANATORY MODAL -->
+    <div class="modal-overlay" id="pendingModal">
+        <div class="modal-card" style="max-width: 480px;">
+            <div class="modal-header">
+                <h3>Evaluation In Progress</h3>
+                <button class="modal-close-btn" onclick="closePendingModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <div style="text-align: center; margin-bottom: 16px;">
+                    <div style="font-size: 40px; margin-bottom: 8px;">⏳</div>
+                    <h4 style="margin: 0 0 6px 0; font-size: 17px;" id="pendingExamTitle">Examination Under Evaluation</h4>
+                    <span class="status-badge badge-correction" id="pendingBadge">Under Correction</span>
+                </div>
+                <p style="font-size: 13.5px; color: var(--text-light); line-height: 1.6; margin-bottom: 16px;">
+                    Your answers were submitted securely and received by the department. In compliance with examination integrity rules, the detailed score sheet is hidden until the course instructor completes grading and officially publishes the final class results.
+                </p>
+                <div class="notice-banner notice-warning" style="margin: 0; font-size: 12.5px;">
+                    <span>🔒 <strong>Confidentiality Rule:</strong> Scores are confidential during grading to prevent provisional discrepancies. Please check back once results are announced.</span>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary btn-sm" onclick="closePendingModal()">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="exam-store.js"></script>
+    <script src="app-utils.js"></script>
+    <script src="script.js"></script>
+    <script>
+        function initStudentResults() {
+            let user = ExamStore.getCurrentUser();
+            if (!user || user.role !== 'student') {
+                user = { fullName: 'John Doe', role: 'student', username: 'johndoe', id: 'usr_s1', department: 'B.Tech Computer Science' };
+                ExamStore.setCurrentUser(user);
+            }
+            AppNav.render('student-results');
+            renderResultsTable();
+        }
+
+        function renderResultsTable() {
+            const user = ExamStore.getCurrentUser();
+            const studentKey = user ? (user.username || user.fullName) : 'johndoe';
+            const subs = ExamStore.getSubmissionsForStudent(studentKey);
+            const query = (document.getElementById('searchResultInput').value || '').toLowerCase();
+            const filter = document.getElementById('filterResultStatus').value;
+
+            let filtered = subs;
+
+            if (filter !== 'all') {
+                if (filter === 'Result Published') {
+                    filtered = filtered.filter(s => s.status === 'Result Published');
+                } else if (filter === 'Under Correction') {
+                    filtered = filtered.filter(s => s.status === 'Under Correction');
+                } else if (filter === 'Submitted') {
+                    filtered = filtered.filter(s => s.status === 'Submitted' || s.status === 'Attended');
+                } else if (filter === 'Failed — Security Violation') {
+                    filtered = filtered.filter(s => s.status === 'Failed — Security Violation');
+                }
+            }
+
+            if (query) {
+                filtered = filtered.filter(s => 
+                    (s.examName && s.examName.toLowerCase().includes(query)) ||
+                    (s.examCode && s.examCode.toLowerCase().includes(query))
+                );
+            }
+
+            const tbody = document.getElementById('resultsTableBody');
+            if (filtered.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="7" class="empty-state-box">
+                            <div class="empty-state-icon">📊</div>
+                            <div style="font-size: 15px; font-weight: 600; margin-bottom: 4px;">No examination results matching your criteria</div>
+                            <p style="font-size: 13px; margin: 0;">Once you attempt examinations or evaluations conclude, your transcripts will appear here.</p>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            tbody.innerHTML = filtered.map(sub => {
+                const exam = ExamStore.getExamById(sub.examId);
+                const isViolation = (sub.status === 'Failed — Security Violation');
+                const isPublished = (sub.status === 'Result Published' || (exam && exam.scoreSheetStatus === 'Result Published' && !isViolation));
+
+                // Date
+                const dateStr = sub.submittedAt ? new Date(sub.submittedAt).toLocaleDateString() : (exam ? exam.date : 'Recent');
+
+                // Column: Score / Visibility (Strict adherence to Section 24)
+                let scoreDisplay = '';
+                let actionBtn = '';
+
+                if (isViolation) {
+                    scoreDisplay = `<span class="status-badge badge-violation">0 / ${sub.totalMarks} (Void)</span>`;
+                    actionBtn = `<button type="button" class="btn btn-secondary btn-sm" style="color: #b91c1c; border-color: #fca5a5;" onclick="openViolationModal('${sub.id}')">Incident Report</button>`;
+                } else if (isPublished) {
+                    const pct = Math.round((sub.obtainedScore / sub.totalMarks) * 100);
+                    scoreDisplay = `
+                        <div class="score-pill-published">
+                            <span>🏆 ${sub.obtainedScore} / ${sub.totalMarks}</span>
+                            <span style="font-size: 11px; opacity: 0.85;">(${pct}%)</span>
+                        </div>
+                    `;
+                    actionBtn = `<button type="button" class="btn btn-sm" style="padding: 5px 12px;" onclick="openScoreSheetModal('${sub.id}')">View Result Sheet →</button>`;
+                } else if (sub.status === 'Under Correction') {
+                    scoreDisplay = `<span class="score-pill-pending">⏳ Under Correction</span>`;
+                    actionBtn = `<button type="button" class="btn btn-secondary btn-sm" style="padding: 5px 12px;" onclick="openPendingNoticeModal('${sub.id}')">View Status</button>`;
+                } else {
+                    scoreDisplay = `<span class="score-pill-pending">🔒 Result Pending</span>`;
+                    actionBtn = `<button type="button" class="btn btn-secondary btn-sm" style="padding: 5px 12px;" onclick="openPendingNoticeModal('${sub.id}')">View Status</button>`;
+                }
+
+                return `
+                    <tr>
+                        <td>
+                            <strong>${escapeHtml(sub.examName)}</strong>
+                            <div style="font-size: 12px; color: var(--text-light);">${exam ? escapeHtml(exam.subject) : 'Academic Assessment'}</div>
+                        </td>
+                        <td><span class="exam-code-box" style="padding: 2px 8px; font-size: 12px;">${escapeHtml(sub.examCode || 'N/A')}</span></td>
+                        <td>${dateStr}</td>
+                        <td>
+                            <span style="font-size: 12px; font-weight: 600;">
+                                ${sub.examType === 'jpeg' ? '📷 JPEG Answer' : '◉ MCQ'}
+                            </span>
+                        </td>
+                        <td>${AppNav.getStatusBadge(sub.status)}</td>
+                        <td>${scoreDisplay}</td>
+                        <td style="text-align: right;">${actionBtn}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // --- SCORE SHEET MODAL (Section 24: Only after publication) ---
+        function openScoreSheetModal(submissionId) {
+            const sub = ExamStore.getSubmissionById(submissionId);
+            if (!sub) return;
+
+            const exam = ExamStore.getExamById(sub.examId);
+            document.getElementById('scoreModalTitle').textContent = `${sub.examName} — Official Score Sheet`;
+            document.getElementById('scoreModalMeta').textContent = `Candidate: ${sub.studentName} (${sub.studentId}) · Exam Code: ${sub.examCode}`;
+            document.getElementById('scoreModalFinalScore').textContent = `${sub.obtainedScore} / ${sub.totalMarks}`;
+            
+            const pct = Math.round((sub.obtainedScore / sub.totalMarks) * 100);
+            document.getElementById('scoreModalPercentage').textContent = `Final Grade Percentage: ${pct}% · Status: Evaluated & Published`;
+            document.getElementById('scoreModalInstructor').textContent = `Instructor: ${exam ? exam.teacherName : 'Faculty Lead'}`;
+
+            // Render Questions Breakdown
+            const listEl = document.getElementById('scoreModalQuestionList');
+            if (!exam || !exam.questions || exam.questions.length === 0) {
+                listEl.innerHTML = `<div style="color: var(--text-light); font-size: 13px;">No itemized questions available.</div>`;
+            } else {
+                listEl.innerHTML = exam.questions.map((q, idx) => {
+                    const studentAns = sub.answers ? sub.answers[q.id] : null;
+                    const awarded = (sub.questionScores && sub.questionScores[q.id] !== undefined) ? sub.questionScores[q.id] : 0;
+                    const remarks = (sub.questionRemarks && sub.questionRemarks[q.id]) ? sub.questionRemarks[q.id] : 'No instructor comments recorded.';
+
+                    let ansContent = '';
+                    if (exam.examType === 'jpeg') {
+                        if (studentAns && studentAns.fileData) {
+                            ansContent = `
+                                <div style="display: flex; gap: 12px; align-items: center; margin-top: 8px;">
+                                    <img src="${studentAns.fileData}" style="width: 70px; height: 70px; object-fit: cover; border-radius: 6px; border: 1px solid var(--border-color); cursor: pointer;" onclick="window.open('${studentAns.fileData}')">
+                                    <div style="font-size: 12px;">
+                                        <strong>Uploaded JPEG Sheet:</strong> ${escapeHtml(studentAns.fileName || 'handwritten.jpg')}<br>
+                                        <span style="color: var(--text-light); font-size: 11px;">Click thumbnail to inspect full sheet</span>
+                                    </div>
+                                </div>
+                            `;
+                        } else {
+                            ansContent = `<div style="font-size: 12px; color: var(--text-light); margin-top: 4px;">No sheet uploaded.</div>`;
+                        }
+                    } else {
+                        // MCQ
+                        const options = [q.optionA, q.optionB, q.optionC, q.optionD];
+                        const chosenLetter = studentAns ? ['A', 'B', 'C', 'D'][parseInt(studentAns.answer)] : 'None';
+                        const chosenText = (studentAns && options[parseInt(studentAns.answer)]) ? options[parseInt(studentAns.answer)] : 'Unanswered';
+                        const correctLetter = ['A', 'B', 'C', 'D'][parseInt(q.correctAnswer)];
+                        const isCorrect = (studentAns && parseInt(studentAns.answer) === parseInt(q.correctAnswer));
+
+                        ansContent = `
+                            <div style="font-size: 13px; margin-top: 8px;">
+                                <div style="margin-bottom: 4px;"><strong>Your Answer:</strong> Option ${chosenLetter} — <em>${escapeHtml(chosenText)}</em> ${isCorrect ? '✅' : '❌'}</div>
+                                <div style="color: var(--text-light); font-size: 12px;"><strong>Correct Answer:</strong> Option ${correctLetter} — <em>${escapeHtml(options[parseInt(q.correctAnswer)])}</em></div>
+                            </div>
+                        `;
+                    }
+
+                    return `
+                        <div class="breakdown-q-card">
+                            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
+                                <strong style="font-size: 14px;">Question ${idx + 1}</strong>
+                                <span class="status-badge ${awarded > 0 ? 'badge-published' : 'badge-draft'}">
+                                    Marks: ${awarded} / ${q.marks || 1}
+                                </span>
+                            </div>
+                            <div style="font-size: 13.5px; margin-bottom: 8px; color: var(--text-color);">${escapeHtml(q.text)}</div>
+                            ${ansContent}
+                            <div style="margin-top: 10px; padding: 8px 12px; background: var(--secondary-color); border-radius: 6px; font-size: 12px;">
+                                <strong>Faculty Evaluation Remarks:</strong> ${escapeHtml(remarks)}
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            document.getElementById('scoreModal').classList.add('open');
+        }
+
+        function closeScoreModal() {
+            document.getElementById('scoreModal').classList.remove('open');
+        }
+
+        // --- VIOLATION MODAL ---
+        function openViolationModal(submissionId) {
+            const sub = ExamStore.getSubmissionById(submissionId);
+            if (!sub) return;
+
+            document.getElementById('violModalReason').textContent = sub.securityViolation ? sub.securityViolation.reason : 'Tab Switching Detected';
+            document.getElementById('violModalTime').textContent = sub.securityViolation ? new Date(sub.securityViolation.timestamp).toLocaleString() : 'Recorded during session';
+
+            document.getElementById('violationModal').classList.add('open');
+        }
+
+        function closeViolationModal() {
+            document.getElementById('violationModal').classList.remove('open');
+        }
+
+        // --- PENDING MODAL ---
+        function openPendingNoticeModal(submissionId) {
+            const sub = ExamStore.getSubmissionById(submissionId);
+            if (!sub) return;
+
+            document.getElementById('pendingExamTitle').textContent = sub.examName;
+            document.getElementById('pendingBadge').textContent = (sub.status === 'Under Correction') ? 'Under Correction' : 'Result Pending';
+            document.getElementById('pendingModal').classList.add('open');
+        }
+
+        function closePendingModal() {
+            document.getElementById('pendingModal').classList.remove('open');
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            initStudentResults();
+        });
+    </script>
+</body>
+</html>

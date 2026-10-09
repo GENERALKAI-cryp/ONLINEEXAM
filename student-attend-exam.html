@@ -1,0 +1,773 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Examination Session - Online Examination System</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="app-styles.css">
+    <style>
+        /* Distraction-Free Exam Top Bar */
+        .exam-header-bar {
+            background: var(--card-bg);
+            border-bottom: 2px solid var(--border-color);
+            padding: 12px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        .exam-layout-grid {
+            display: grid;
+            grid-template-columns: 1fr 300px;
+            gap: 24px;
+            margin-top: 20px;
+            min-height: calc(100vh - 120px);
+        }
+        @media (max-width: 960px) {
+            .exam-layout-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        .question-workspace-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            padding: 32px;
+            box-shadow: var(--shadow);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        .question-meta-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 16px;
+            margin-bottom: 24px;
+        }
+        .question-text-title {
+            font-size: 19px;
+            font-weight: 600;
+            line-height: 1.6;
+            color: var(--text-color);
+            margin-bottom: 24px;
+        }
+        .q-palette-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 10px;
+            margin-top: 14px;
+        }
+        /* Modal for Fullscreen Security Lockdown */
+        .security-lockdown-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(8px);
+            z-index: 99999;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+        }
+        /* Begin Overlay */
+        .begin-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(6px);
+            z-index: 9000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+    </style>
+</head>
+<body style="background-color: var(--bg-color);">
+
+    <!-- DISTRACTION-FREE EXAM TOP BAR -->
+    <div class="exam-header-bar">
+        <div style="display: flex; align-items: center; gap: 14px;">
+            <div class="logo-placeholder" style="width: 36px; height: 36px; font-size: 16px;">U</div>
+            <div>
+                <h2 style="font-size: 16px; margin: 0; line-height: 1.2;" id="topExamTitle">Examination Portal</h2>
+                <div style="font-size: 12px; color: var(--text-light);" id="topExamSubtitle">Course Code · Total Marks: 0</div>
+            </div>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 18px;">
+            <!-- VISUAL COUNTDOWN TIMER (Section 20) -->
+            <div class="timer-widget" id="examTimerDisplay">
+                <span>⏱️</span>
+                <span id="timerText">--:--</span>
+            </div>
+
+            <!-- SUBMIT EXAM BUTTON -->
+            <button type="button" class="btn btn-sm" id="btnTopSubmit" onclick="confirmSubmitExam()" style="background-color: #10b981;">
+                ✓ Submit Exam
+            </button>
+        </div>
+    </div>
+
+    <!-- MAIN EXAM CONTAINER -->
+    <div class="container" style="max-width: 1350px; padding: 20px;">
+        <div class="exam-layout-grid">
+            
+            <!-- LEFT AREA: QUESTION WORKSPACE (Majority of Screen) -->
+            <div class="question-workspace-card">
+                <div>
+                    <!-- Meta Row -->
+                    <div class="question-meta-row">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <span class="role-badge role-teacher" style="font-size: 12px; padding: 4px 10px;" id="qNumberBadge">Question 1 of 5</span>
+                            <span class="status-badge badge-draft" id="qTypeBadge">MCQ</span>
+                        </div>
+                        <div style="font-size: 13px; font-weight: 600; color: var(--text-light);" id="qMarksBadge">
+                            Marks: 10
+                        </div>
+                    </div>
+
+                    <!-- Question Text -->
+                    <div class="question-text-title" id="questionText">
+                        Loading question content...
+                    </div>
+
+                    <!-- MCQ OPTIONS CONTAINER -->
+                    <div id="mcqOptionsContainer" style="display: none;">
+                        <!-- Options generated dynamically -->
+                    </div>
+
+                    <!-- JPEG ANSWER UPLOAD CONTAINER -->
+                    <div id="jpegUploadContainer" style="display: none;">
+                        <div style="font-size: 13px; color: var(--text-light); margin-bottom: 12px;">
+                            📷 <strong>Handwritten Answer Upload:</strong> Write your answer clearly on white paper, photograph or scan it as a clean JPEG image, and upload it below.
+                        </div>
+
+                        <!-- Drag and Drop Zone -->
+                        <div class="jpeg-upload-zone" onclick="document.getElementById('jpegFileInput').click()">
+                            <div style="font-size: 36px; margin-bottom: 8px;">📤</div>
+                            <div style="font-weight: 600; font-size: 15px; margin-bottom: 4px;">Click to Select or Drop Handwritten JPEG Sheet</div>
+                            <div style="font-size: 12px; color: var(--text-light);">Supported formats: .jpg, .jpeg | Max size: 5MB</div>
+                            <input type="file" id="jpegFileInput" accept="image/jpeg,image/jpg" style="display: none;" onchange="handleJpegFileSelected(event)">
+                        </div>
+
+                        <!-- Uploaded Preview Box -->
+                        <div id="jpegPreviewBox" class="jpeg-preview-box" style="display: none;">
+                            <img id="jpegThumbImg" class="jpeg-thumb" src="" alt="Answer Sheet Thumbnail" onclick="openJpegLightbox()">
+                            <div style="flex: 1;">
+                                <div style="font-weight: 600; font-size: 14px; margin-bottom: 2px;" id="jpegFileName">sheet.jpg</div>
+                                <div style="font-size: 12px; color: var(--text-light);" id="jpegFileMeta">Uploaded just now · Verified JPEG</div>
+                                <div style="margin-top: 6px; display: flex; gap: 10px;">
+                                    <button type="button" class="btn btn-secondary btn-sm" style="padding: 4px 10px; font-size: 11px;" onclick="openJpegLightbox()">🔍 View Full Image</button>
+                                    <button type="button" class="btn btn-secondary btn-sm" style="padding: 4px 10px; font-size: 11px; color: #ef4444; border-color: #fca5a5;" onclick="replaceOrRemoveJpeg()">🔄 Replace JPEG</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bottom Navigation Toolbar -->
+                <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-color); padding-top: 20px; margin-top: 30px; flex-wrap: wrap; gap: 12px;">
+                    <div>
+                        <button type="button" class="btn btn-secondary" id="btnPrevQ" onclick="navigateQuestion(-1)">← Previous</button>
+                        <button type="button" class="btn btn-secondary" style="margin-left: 8px; font-size: 13px;" onclick="clearCurrentAnswer()">Clear Answer</button>
+                    </div>
+
+                    <div style="display: flex; gap: 12px;">
+                        <button type="button" class="btn" id="btnNextQ" onclick="navigateQuestion(1)">Save & Next →</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- RIGHT AREA: QUESTION PALETTE & EXAM MONITORING -->
+            <div>
+                <!-- Question Palette Card -->
+                <div class="card" style="margin-bottom: 20px;">
+                    <h3 style="margin: 0 0 6px 0; font-size: 15px;">Question Navigator</h3>
+                    <div style="font-size: 12px; color: var(--text-light);">Click any question number to jump directly:</div>
+                    
+                    <div class="q-palette-grid" id="questionPaletteGrid">
+                        <!-- Palette buttons populated dynamically -->
+                    </div>
+
+                    <!-- Legend -->
+                    <div style="margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 6px; font-size: 12px;">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <span style="width: 14px; height: 14px; border-radius: 3px; background: var(--primary-color); display: inline-block;"></span>
+                            <span>Current Active Question</span>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <span style="width: 14px; height: 14px; border-radius: 3px; background: #10b981; display: inline-block;"></span>
+                            <span>Answered / Uploaded</span>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <span style="width: 14px; height: 14px; border-radius: 3px; background: var(--card-bg); border: 1px solid var(--border-color); display: inline-block;"></span>
+                            <span>Not Answered Yet</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Exam Status & Candidate Info Card -->
+                <div class="card" style="margin-bottom: 20px;">
+                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
+                        <div class="user-avatar-sm" id="candidateAvatar">S</div>
+                        <div>
+                            <strong style="font-size: 13px; display: block;" id="candidateName">Student Candidate</strong>
+                            <span style="font-size: 11px; color: var(--text-light);" id="candidateRoll">Roll: STU-2024-001</span>
+                        </div>
+                    </div>
+
+                    <div style="border-top: 1px solid var(--border-color); padding-top: 12px; font-size: 12px;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                            <span style="color: var(--text-light);">Total Questions:</span>
+                            <strong id="sideTotalQuestions">0</strong>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                            <span style="color: var(--text-light);">Answered:</span>
+                            <strong id="sideAnsweredCount" style="color: #10b981;">0</strong>
+                        </div>
+                        <div style="display: flex; justify-content: space-between;">
+                            <span style="color: var(--text-light);">Remaining:</span>
+                            <strong id="sideRemainingCount" style="color: #ef4444;">0</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Live Security Proctoring Badge -->
+                <div class="card" style="border: 1px solid #fecaca; background: #fff5f5;">
+                    <div style="display: flex; gap: 10px; align-items: flex-start;">
+                        <div style="font-size: 20px; color: #ef4444;">🛡️</div>
+                        <div style="font-size: 12px; color: #991b1b; line-height: 1.4;">
+                            <strong>Security Shield Active:</strong> Tab switching or leaving this window will immediately terminate the session and register a failure.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 1. BEGIN EXAM CONFIRMATION OVERLAY (Ensures Timer Starts on Begin) -->
+    <div class="begin-overlay" id="beginExamOverlay">
+        <div class="card center-box" style="max-width: 520px; margin: 0; text-align: left; padding: 32px;">
+            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
+                <div style="width: 44px; height: 44px; border-radius: 50%; background: rgba(79, 70, 229, 0.1); color: var(--primary-color); display: flex; align-items: center; justify-content: center; font-size: 22px;">
+                    📝
+                </div>
+                <div>
+                    <h3 style="margin: 0; font-size: 19px;" id="startModalTitle">Ready to Begin</h3>
+                    <span style="font-size: 12px; color: var(--text-light);" id="startModalDuration">Duration: 45 Minutes</span>
+                </div>
+            </div>
+
+            <p style="font-size: 13.5px; color: var(--text-color); margin-bottom: 16px; line-height: 1.5;">
+                You are entering the official examination hall. Once you click <strong>"Begin Answering"</strong>:
+            </p>
+
+            <ul style="font-size: 13px; color: var(--text-light); margin-bottom: 20px; padding-left: 20px; line-height: 1.6;">
+                <li>The official <strong>Countdown Timer</strong> will strictly begin.</li>
+                <li><strong>Anti-cheating tab monitoring</strong> will arm immediately.</li>
+                <li>Do NOT close, minimize, or switch away from this browser tab.</li>
+            </ul>
+
+            <button type="button" class="btn full-width" style="padding: 14px; font-size: 16px; font-weight: 600;" onclick="startExamSession()">
+                Begin Answering (Start Timer) →
+            </button>
+        </div>
+    </div>
+
+    <!-- 2. SUBMISSION CONFIRMATION MODAL -->
+    <div class="modal-overlay" id="submitModal">
+        <div class="modal-card" style="max-width: 480px;">
+            <div class="modal-header">
+                <h3>Submit Examination</h3>
+                <button class="modal-close-btn" onclick="closeSubmitModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <p style="font-size: 14px; margin-bottom: 16px;">
+                    Are you sure you want to finalize and submit your examination? Once submitted, answers cannot be edited.
+                </p>
+                <div style="background: var(--secondary-color); padding: 14px; border-radius: 8px; font-size: 13px; margin-bottom: 16px;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                        <span>Total Questions:</span>
+                        <strong id="modalTotalQ">5</strong>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                        <span>Questions Answered:</span>
+                        <strong id="modalAnsweredQ" style="color: #10b981;">0</strong>
+                    </div>
+                    <div style="display: flex; justify-content: space-between;">
+                        <span>Unanswered Questions:</span>
+                        <strong id="modalUnansweredQ" style="color: #ef4444;">0</strong>
+                    </div>
+                </div>
+                <div class="notice-banner notice-warning" style="margin: 0; font-size: 12px;">
+                    <span>⚠️ Submitting now will lock your final score and transmit your answer sheets.</span>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary btn-sm" onclick="closeSubmitModal()">Continue Answering</button>
+                <button type="button" class="btn btn-sm" style="background-color: #10b981;" onclick="finalizeExamSubmission()">Confirm & Submit</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. SECURITY VIOLATION TERMINATION FULLSCREEN LOCKDOWN (Section 22) -->
+    <div class="security-lockdown-overlay" id="securityViolationOverlay">
+        <div class="security-violation-card">
+            <div style="width: 72px; height: 72px; border-radius: 50%; background: #fee2e2; color: #ef4444; font-size: 38px; display: flex; align-items: center; justify-content: center; margin: 0 auto 18px auto;">
+                ⚠️
+            </div>
+            <h2 style="color: #b91c1c; font-size: 24px; margin-bottom: 10px;">Failed — Security Violation</h2>
+            <div style="font-size: 14px; font-weight: 600; color: #991b1b; margin-bottom: 12px;" id="violationReason">
+                Tab Switching Detected
+            </div>
+            <p style="font-size: 13px; color: var(--text-light); line-height: 1.6; margin-bottom: 24px;">
+                Our proctoring monitor detected that you navigated away from this examination window or opened another browser tab during the active session. Under university academic guidelines, your examination attempt has been immediately terminated with zero marks.
+            </p>
+            <div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 12px; margin-bottom: 24px; font-size: 12px; color: #b91c1c;">
+                <strong>Incident Logged:</strong> <span id="violationTimestamp">--:--</span><br>
+                <strong>Candidate ID:</strong> <span id="violationCandidate">STU-2024-001</span>
+            </div>
+            <a href="student-results.html" class="btn full-width" style="background: #ef4444; color: #fff; padding: 12px; text-decoration: none; font-weight: 600;">
+                Proceed to Results & Incident Report →
+            </a>
+        </div>
+    </div>
+
+    <!-- 4. LIGHTBOX FOR JPEG PREVIEW -->
+    <div class="modal-overlay" id="jpegLightbox">
+        <div class="modal-card modal-lg">
+            <div class="modal-header">
+                <h3>Uploaded Answer Sheet Full View</h3>
+                <button class="modal-close-btn" onclick="closeJpegLightbox()">×</button>
+            </div>
+            <div class="modal-body" style="text-align: center; background: #0f172a; padding: 16px;">
+                <img id="lightboxImg" src="" style="max-width: 100%; max-height: 70vh; border-radius: 4px;" alt="High Resolution Answer Sheet">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary btn-sm" onclick="closeJpegLightbox()">Close Preview</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="exam-store.js"></script>
+    <script src="app-utils.js"></script>
+    <script src="script.js"></script>
+    <script>
+        // State variables
+        let exam = null;
+        let currentSubmission = null;
+        let activeQuestionIndex = 0;
+        let timerInterval = null;
+        let timeRemainingSeconds = 0;
+        let isExamActive = false;
+        let securityArmed = false;
+
+        function initAttendExam() {
+            let user = ExamStore.getCurrentUser();
+            if (!user || user.role !== 'student') {
+                user = { fullName: 'John Doe', role: 'student', username: 'johndoe', id: 'usr_s1', department: 'B.Tech Computer Science' };
+                ExamStore.setCurrentUser(user);
+            }
+
+            const urlParams = new URLSearchParams(window.location.search);
+            const examId = urlParams.get('id');
+
+            if (!examId) {
+                alert('No examination specified. Returning to Enter Exam.');
+                window.location.href = 'student-enter-exam.html';
+                return;
+            }
+
+            exam = ExamStore.getExamById(examId);
+            if (!exam) {
+                alert('Examination not found. Returning to Enter Exam.');
+                window.location.href = 'student-enter-exam.html';
+                return;
+            }
+
+            // Populate Candidate Profile
+            document.getElementById('candidateName').textContent = user.fullName || user.username;
+            document.getElementById('candidateRoll').textContent = `ID: ${user.id || 'STU-2024-001'}`;
+            document.getElementById('candidateAvatar').textContent = (user.fullName || user.username || 'S')[0].toUpperCase();
+
+            // Populate Top Bar
+            document.getElementById('topExamTitle').textContent = exam.name;
+            document.getElementById('topExamSubtitle').textContent = `${exam.subject || 'Course Assessment'} · Total Marks: ${exam.totalMarks}`;
+
+            // Populate Start Modal
+            document.getElementById('startModalTitle').textContent = exam.name;
+            document.getElementById('startModalDuration').textContent = `Duration: ${exam.duration} Minutes · Total Marks: ${exam.totalMarks}`;
+
+            // Check if student already has a submission for this exam
+            const studentKey = user.username || user.fullName;
+            const existingSubs = ExamStore.getSubmissionsForStudent(studentKey).filter(s => s.examId === exam.id);
+
+            if (existingSubs.length > 0) {
+                const latest = existingSubs[existingSubs.length - 1];
+                if (latest.status === 'Failed — Security Violation') {
+                    triggerSecurityViolationUI(latest.securityViolation ? latest.securityViolation.reason : 'Previous Tab Switching Violation');
+                    return;
+                } else if (latest.status === 'Submitted' || latest.status === 'Result Published' || latest.status === 'Under Correction') {
+                    alert('You have already submitted this examination. Redirecting to your results.');
+                    window.location.href = 'student-results.html';
+                    return;
+                } else {
+                    currentSubmission = latest;
+                }
+            } else {
+                currentSubmission = ExamStore.createSubmission(exam.id, user);
+            }
+
+            timeRemainingSeconds = exam.duration * 60;
+            updateTimerDisplay();
+
+            // Show Begin Overlay
+            document.getElementById('beginExamOverlay').style.display = 'flex';
+        }
+
+        // Section 20: Timer starts when student starts answering
+        function startExamSession() {
+            document.getElementById('beginExamOverlay').style.display = 'none';
+            isExamActive = true;
+            securityArmed = true;
+
+            // Start countdown timer
+            startTimer();
+
+            // Arm Tab Switching Proctoring (Section 22)
+            armSecurityMonitoring();
+
+            // Render First Question
+            renderQuestion(0);
+            renderPalette();
+        }
+
+        // --- TIMER IMPLEMENTATION (Section 20) ---
+        function startTimer() {
+            if (timerInterval) clearInterval(timerInterval);
+
+            timerInterval = setInterval(() => {
+                if (timeRemainingSeconds <= 0) {
+                    clearInterval(timerInterval);
+                    timerInterval = null;
+                    handleTimeExpired();
+                    return;
+                }
+
+                timeRemainingSeconds--;
+                updateTimerDisplay();
+            }, 1000);
+        }
+
+        function updateTimerDisplay() {
+            const mins = Math.floor(timeRemainingSeconds / 60);
+            const secs = timeRemainingSeconds % 60;
+            const text = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+            const displayEl = document.getElementById('timerText');
+            const widgetEl = document.getElementById('examTimerDisplay');
+
+            displayEl.textContent = text;
+
+            // Warning state when less than 5 minutes remain (or < 20%)
+            if (timeRemainingSeconds < 300) {
+                widgetEl.classList.add('warning');
+            } else {
+                widgetEl.classList.remove('warning');
+            }
+        }
+
+        function handleTimeExpired() {
+            isExamActive = false;
+            securityArmed = false;
+            Toast.show('Time has expired! Submitting your answers automatically...', 'warning', 4000);
+            setTimeout(() => {
+                finalizeExamSubmission(true);
+            }, 1500);
+        }
+
+        // --- EXAM SECURITY: TAB SWITCHING VIOLATION (Section 22) ---
+        function armSecurityMonitoring() {
+            // 1. Page Visibility API
+            document.addEventListener('visibilitychange', () => {
+                if (!securityArmed || !isExamActive) return;
+
+                if (document.hidden) {
+                    executeSecurityViolation('Tab Switching Detected (Navigated away from examination tab)');
+                }
+            });
+
+            // 2. Window Blur (e.g. alt-tab or switching app)
+            window.addEventListener('blur', () => {
+                if (!securityArmed || !isExamActive) return;
+                executeSecurityViolation('Window Blur Detected (Switched to external application or window)');
+            });
+        }
+
+        function executeSecurityViolation(reason) {
+            if (!isExamActive) return;
+
+            isExamActive = false;
+            securityArmed = false;
+
+            if (timerInterval) clearInterval(timerInterval);
+
+            // Record violation in store
+            if (currentSubmission) {
+                ExamStore.recordSecurityViolation(currentSubmission.id, reason);
+            }
+
+            triggerSecurityViolationUI(reason);
+        }
+
+        function triggerSecurityViolationUI(reason) {
+            const overlay = document.getElementById('securityViolationOverlay');
+            document.getElementById('violationReason').textContent = reason || 'Tab Switching Detected';
+            document.getElementById('violationTimestamp').textContent = new Date().toLocaleTimeString();
+            const user = ExamStore.getCurrentUser();
+            document.getElementById('violationCandidate').textContent = user ? (user.id || user.username) : 'Candidate';
+
+            overlay.style.display = 'flex';
+        }
+
+        // --- QUESTION RENDERING (MCQ & JPEG) ---
+        function renderQuestion(index) {
+            if (!exam || !exam.questions || exam.questions.length === 0) {
+                document.getElementById('questionText').textContent = 'No questions available in this examination.';
+                return;
+            }
+
+            if (index < 0 || index >= exam.questions.length) return;
+            activeQuestionIndex = index;
+
+            const q = exam.questions[index];
+            const qTotal = exam.questions.length;
+
+            document.getElementById('qNumberBadge').textContent = `Question ${index + 1} of ${qTotal}`;
+            document.getElementById('qMarksBadge').textContent = `Marks: ${q.marks || 1}`;
+
+            document.getElementById('btnPrevQ').disabled = (index === 0);
+            document.getElementById('btnNextQ').textContent = (index === qTotal - 1) ? 'Review / Finish →' : 'Save & Next →';
+
+            document.getElementById('questionText').textContent = q.text;
+
+            // Render depending on exam type (MCQ vs JPEG)
+            if (exam.examType === 'jpeg') {
+                renderJpegQuestion(q);
+            } else {
+                renderMcqQuestion(q);
+            }
+
+            renderPalette();
+            updateSidebarCounts();
+        }
+
+        function renderMcqQuestion(q) {
+            document.getElementById('qTypeBadge').textContent = 'Multiple Choice';
+            document.getElementById('mcqOptionsContainer').style.display = 'block';
+            document.getElementById('jpegUploadContainer').style.display = 'none';
+
+            const container = document.getElementById('mcqOptionsContainer');
+            const savedAns = (currentSubmission && currentSubmission.answers && currentSubmission.answers[q.id]) 
+                ? currentSubmission.answers[q.id].answer 
+                : null;
+
+            const options = [
+                { letter: 'A', text: q.optionA, val: 0 },
+                { letter: 'B', text: q.optionB, val: 1 },
+                { letter: 'C', text: q.optionC, val: 2 },
+                { letter: 'D', text: q.optionD, val: 3 }
+            ];
+
+            container.innerHTML = options.map(opt => {
+                const isSelected = (savedAns !== null && parseInt(savedAns) === opt.val);
+                return `
+                    <div class="student-option-card ${isSelected ? 'selected' : ''}" onclick="selectOption('${q.id}', ${opt.val})">
+                        <div class="option-letter-badge">${opt.letter}</div>
+                        <div style="font-size: 14.5px; color: var(--text-color);">${escapeHtml(opt.text)}</div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function selectOption(questionId, optionIndex) {
+            if (!isExamActive) return;
+
+            ExamStore.saveAnswer(currentSubmission.id, questionId, {
+                answer: optionIndex,
+                answeredAt: new Date().toISOString()
+            });
+
+            // Re-render question options and palette
+            renderQuestion(activeQuestionIndex);
+        }
+
+        function renderJpegQuestion(q) {
+            document.getElementById('qTypeBadge').textContent = '📷 JPEG Handwritten Sheet';
+            document.getElementById('mcqOptionsContainer').style.display = 'none';
+            document.getElementById('jpegUploadContainer').style.display = 'block';
+
+            const savedUpload = (currentSubmission && currentSubmission.answers && currentSubmission.answers[q.id]) 
+                ? currentSubmission.answers[q.id] 
+                : null;
+
+            const previewBox = document.getElementById('jpegPreviewBox');
+            if (savedUpload && savedUpload.fileData) {
+                previewBox.style.display = 'flex';
+                document.getElementById('jpegThumbImg').src = savedUpload.fileData;
+                document.getElementById('jpegFileName').textContent = savedUpload.fileName || 'handwritten_sheet.jpg';
+                document.getElementById('jpegFileMeta').textContent = `Uploaded on ${new Date(savedUpload.uploadedAt || Date.now()).toLocaleTimeString()} · Verified JPEG`;
+            } else {
+                previewBox.style.display = 'none';
+            }
+        }
+
+        function handleJpegFileSelected(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            if (!file.type.match('image/jpeg.*') && !file.type.match('image/jpg.*')) {
+                Toast.show('Please upload a valid JPEG / JPG image file.', 'danger');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const fileData = e.target.result;
+                const q = exam.questions[activeQuestionIndex];
+
+                ExamStore.saveAnswer(currentSubmission.id, q.id, {
+                    fileData: fileData,
+                    fileName: file.name,
+                    fileSize: file.size,
+                    uploadedAt: new Date().toISOString()
+                });
+
+                Toast.show('JPEG answer sheet uploaded successfully!', 'success');
+                renderQuestion(activeQuestionIndex);
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function replaceOrRemoveJpeg() {
+            document.getElementById('jpegFileInput').value = '';
+            document.getElementById('jpegFileInput').click();
+        }
+
+        function clearCurrentAnswer() {
+            if (!currentSubmission || !exam) return;
+            const q = exam.questions[activeQuestionIndex];
+            if (currentSubmission.answers[q.id]) {
+                delete currentSubmission.answers[q.id];
+                ExamStore.saveSubmissions(ExamStore.getSubmissions());
+                Toast.show('Answer cleared for this question.', 'info');
+                renderQuestion(activeQuestionIndex);
+            }
+        }
+
+        function navigateQuestion(delta) {
+            const nextIdx = activeQuestionIndex + delta;
+            if (nextIdx >= exam.questions.length) {
+                confirmSubmitExam();
+                return;
+            }
+            renderQuestion(nextIdx);
+        }
+
+        // --- QUESTION PALETTE ---
+        function renderPalette() {
+            const grid = document.getElementById('questionPaletteGrid');
+            if (!exam || !exam.questions) return;
+
+            grid.innerHTML = exam.questions.map((q, idx) => {
+                const isCurrent = (idx === activeQuestionIndex);
+                const isAnswered = (currentSubmission && currentSubmission.answers && currentSubmission.answers[q.id] !== undefined);
+
+                let cls = 'q-nav-btn';
+                if (isCurrent) cls += ' active';
+                else if (isAnswered) cls += ' answered';
+
+                return `
+                    <button type="button" class="${cls}" onclick="renderQuestion(${idx})">
+                        ${idx + 1}
+                    </button>
+                `;
+            }).join('');
+        }
+
+        function updateSidebarCounts() {
+            if (!exam || !exam.questions) return;
+            const total = exam.questions.length;
+            const answered = Object.keys(currentSubmission.answers || {}).length;
+            const remaining = Math.max(0, total - answered);
+
+            document.getElementById('sideTotalQuestions').textContent = total;
+            document.getElementById('sideAnsweredCount').textContent = answered;
+            document.getElementById('sideRemainingCount').textContent = remaining;
+        }
+
+        // --- LIGHTBOX ---
+        function openJpegLightbox() {
+            const q = exam.questions[activeQuestionIndex];
+            const ans = currentSubmission.answers[q.id];
+            if (ans && ans.fileData) {
+                document.getElementById('lightboxImg').src = ans.fileData;
+                document.getElementById('jpegLightbox').classList.add('open');
+            }
+        }
+
+        function closeJpegLightbox() {
+            document.getElementById('jpegLightbox').classList.remove('open');
+        }
+
+        // --- SUBMISSION LOGIC ---
+        function confirmSubmitExam() {
+            const total = exam.questions.length;
+            const answered = Object.keys(currentSubmission.answers || {}).length;
+            const unanswered = total - answered;
+
+            document.getElementById('modalTotalQ').textContent = total;
+            document.getElementById('modalAnsweredQ').textContent = answered;
+            document.getElementById('modalUnansweredQ').textContent = unanswered;
+
+            document.getElementById('submitModal').classList.add('open');
+        }
+
+        function closeSubmitModal() {
+            document.getElementById('submitModal').classList.remove('open');
+        }
+
+        function finalizeExamSubmission(isAuto = false) {
+            closeSubmitModal();
+            isExamActive = false;
+            securityArmed = false;
+            if (timerInterval) clearInterval(timerInterval);
+
+            // Call store submission
+            ExamStore.submitExam(currentSubmission.id);
+
+            Toast.show('Exam submitted successfully! Generating result record...', 'success', 3000);
+
+            setTimeout(() => {
+                window.location.href = 'student-results.html';
+            }, 1200);
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            initAttendExam();
+        });
+    </script>
+</body>
+</html>

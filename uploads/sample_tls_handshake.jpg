@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="600" height="400" viewBox="0 0 600 400">
+  <rect width="600" height="400" fill="#fdfbf7" stroke="#333" stroke-width="2"/>
+  <text x="30" y="50" font-family="Courier, monospace" font-size="20" font-weight="bold" fill="#1e3a8a">Handwritten Answer Sheet - RSA Algorithm</text>
+  <line x1="30" y1="65" x2="570" y2="65" stroke="#1e3a8a" stroke-width="1.5"/>
+  <text x="30" y="110" font-family="sans-serif" font-size="16" fill="#111827">Q1. RSA Asymmetric Key Generation Derivation</text>
+  <text x="50" y="150" font-family="monospace" font-size="14" fill="#1f2937">1. Let p = 61, q = 53 (prime numbers)</text>
+  <text x="50" y="180" font-family="monospace" font-size="14" fill="#1f2937">2. Modulus n = p * q = 3233</text>
+  <text x="50" y="210" font-family="monospace" font-size="14" fill="#1f2937">3. Euler Totient phi(n) = (60) * (52) = 3120</text>
+  <text x="50" y="240" font-family="monospace" font-size="14" fill="#1f2937">4. Public exponent e = 17 (gcd(17, 3120) = 1)</text>
+  <text x="50" y="270" font-family="monospace" font-size="14" fill="#1f2937">5. Private key d = 17^(-1) mod 3120 = 2753</text>
+  <rect x="40" y="310" width="520" height="50" fill="#e0f2fe" stroke="#38bdf8" rx="6"/>
+  <text x="60" y="340" font-family="sans-serif" font-size="14" fill="#0369a1">[Verified handwritten submission: John Doe / STU-2024-001]</text>
+</svg>

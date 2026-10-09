@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Dashboard - Online Examination System</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="app-styles.css">
+</head>
+<body>
+    <header></header>
+
+    <div class="container">
+        <!-- Student Welcome Banner -->
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px; flex-wrap: wrap; gap: 15px;">
+            <div>
+                <h1 style="font-size: 26px; margin-bottom: 4px;">Student Examination Portal</h1>
+                <p style="color: var(--text-light); font-size: 14px; margin: 0;">Access scheduled examinations via access code, track submission workflows, and view published score sheets.</p>
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <a href="student-enter-exam.html" class="btn btn-sm">🔑 Enter Exam Code</a>
+                <a href="student-results.html" class="btn btn-sm btn-secondary">📊 View My Results</a>
+            </div>
+        </div>
+
+        <!-- Metric Statistics Cards -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon">📑</div>
+                <div class="stat-content">
+                    <span class="stat-value" id="statAttendedCount">0</span>
+                    <span class="stat-label">Total Exams Attended</span>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon" style="color: #b45309; background: #fffbeb;">⏳</div>
+                <div class="stat-content">
+                    <span class="stat-value" id="statPendingCount" style="color: #b45309;">0</span>
+                    <span class="stat-label">Under Correction</span>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon" style="color: #15803d; background: #f0fdf4;">🏆</div>
+                <div class="stat-content">
+                    <span class="stat-value" id="statPublishedCount" style="color: #15803d;">0</span>
+                    <span class="stat-label">Published Results</span>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon" style="color: #b91c1c; background: #fef2f2;">🛡️</div>
+                <div class="stat-content">
+                    <span class="stat-value" id="statViolationsCount" style="color: #b91c1c;">0</span>
+                    <span class="stat-label">Security Incidents</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Access Code Entry Card -->
+        <div class="card" style="margin-bottom: 28px; border-left: 4px solid var(--primary-color);">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px;">
+                <div style="max-width: 600px;">
+                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+                        <span style="font-size: 20px;">🔑</span>
+                        <h3 style="margin: 0; font-size: 18px;">Enter Examination via Access Code</h3>
+                    </div>
+                    <p style="font-size: 13px; color: var(--text-light); margin: 0;">
+                        Examinations are locked by default. You can access an examination session only by providing the official unique exam code issued by your course professor.
+                    </p>
+                </div>
+                <div style="display: flex; gap: 10px; width: 100%; max-width: 360px;">
+                    <input type="text" id="quickCodeInput" class="form-control" placeholder="e.g. DBMS2027 or NETSEC99" style="text-transform: uppercase; font-family: monospace; font-weight: 700; letter-spacing: 1px;">
+                    <button type="button" class="btn" style="white-space: nowrap;" onclick="handleQuickCodeSubmit()">Enter →</button>
+                </div>
+            </div>
+            <div style="margin-top: 12px; font-size: 12px; color: var(--text-light); display: flex; gap: 16px; flex-wrap: wrap;">
+                <span><strong>Demo Active Exam Codes:</strong></span>
+                <span>• MCQ Exam: <a href="student-enter-exam.html?code=DBMS2027" style="color: var(--primary-color); font-weight: 600; text-decoration: none;"><code>DBMS2027</code></a></span>
+                <span>• JPEG Handwritten Exam: <a href="student-enter-exam.html?code=NETSEC99" style="color: var(--primary-color); font-weight: 600; text-decoration: none;"><code>NETSEC99</code></a></span>
+            </div>
+        </div>
+
+        <!-- My Exams / Exam Status Section -->
+        <div class="card" id="my-exams" style="margin-bottom: 28px;">
+            <div class="section-toolbar">
+                <div>
+                    <h3 style="margin: 0; font-size: 18px;">My Exams & Status</h3>
+                    <p style="color: var(--text-light); font-size: 13px; margin: 4px 0 0 0;">Comprehensive history of exams you have attempted or registered for.</p>
+                </div>
+                <div class="search-filter-box">
+                    <input type="text" id="searchMyExams" class="search-input" placeholder="Search my exams..." oninput="renderMyExams()">
+                </div>
+            </div>
+
+            <div class="table-responsive">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Examination</th>
+                            <th>Code</th>
+                            <th>Type</th>
+                            <th>Date / Attended</th>
+                            <th>Status</th>
+                            <th>Evaluation Status</th>
+                            <th style="text-align: right;">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="myExamsTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Examination Protocol & Security Advisory -->
+        <div class="card" style="background: var(--secondary-color); border: 1px solid var(--border-color);">
+            <div style="display: flex; gap: 16px; align-items: flex-start;">
+                <div style="font-size: 28px;">🛡️</div>
+                <div>
+                    <h4 style="margin: 0 0 6px 0; font-size: 16px; color: var(--text-color);">Strict Examination Protocol & Anti-Cheating Notice</h4>
+                    <p style="font-size: 13px; color: var(--text-light); margin: 0 0 8px 0; line-height: 1.5;">
+                        • <strong>Automatic Tab-Switching Detection:</strong> Navigating away from the active examination tab, opening new windows, or minimizing the browser will immediately terminate your session and record a permanent <em>Failed — Security Violation</em> status.
+                    </p>
+                    <p style="font-size: 13px; color: var(--text-light); margin: 0 0 8px 0; line-height: 1.5;">
+                        • <strong>Timer Activation:</strong> The countdown timer will strictly initiate as soon as you confirm and begin answering question 1.
+                    </p>
+                    <p style="font-size: 13px; color: var(--text-light); margin: 0; line-height: 1.5;">
+                        • <strong>Score Sheet Release:</strong> Scores are confidential until the instructor completes grading and officially publishes the final class score sheet.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="exam-store.js"></script>
+    <script src="app-utils.js"></script>
+    <script src="script.js"></script>
+    <script>
+        function initStudentDashboard() {
+            let user = ExamStore.getCurrentUser();
+            if (!user || user.role !== 'student') {
+                user = { fullName: 'John Doe', role: 'student', username: 'johndoe', id: 'usr_s1', department: 'B.Tech Computer Science' };
+                ExamStore.setCurrentUser(user);
+            }
+            AppNav.render('student-dashboard');
+            updateStats();
+            renderMyExams();
+        }
+
+        function handleQuickCodeSubmit() {
+            const code = document.getElementById('quickCodeInput').value.trim();
+            if (!code) {
+                Toast.show('Please enter a valid examination code.', 'warning');
+                return;
+            }
+            window.location.href = `student-enter-exam.html?code=${encodeURIComponent(code)}`;
+        }
+
+        function updateStats() {
+            const user = ExamStore.getCurrentUser();
+            const studentKey = user ? (user.username || user.fullName) : 'johndoe';
+            const subs = ExamStore.getSubmissionsForStudent(studentKey);
+
+            const attended = subs.length;
+            const pending = subs.filter(s => s.status === 'Under Correction' || s.status === 'Submitted' || s.status === 'Attended').length;
+            const published = subs.filter(s => s.status === 'Result Published').length;
+            const violations = subs.filter(s => s.status === 'Failed — Security Violation').length;
+
+            document.getElementById('statAttendedCount').textContent = attended;
+            document.getElementById('statPendingCount').textContent = pending;
+            document.getElementById('statPublishedCount').textContent = published;
+            document.getElementById('statViolationsCount').textContent = violations;
+        }
+
+        function renderMyExams() {
+            const user = ExamStore.getCurrentUser();
+            const studentKey = user ? (user.username || user.fullName) : 'johndoe';
+            const subs = ExamStore.getSubmissionsForStudent(studentKey);
+            const query = (document.getElementById('searchMyExams').value || '').toLowerCase();
+
+            let list = subs;
+            if (query) {
+                list = list.filter(s => 
+                    (s.examName && s.examName.toLowerCase().includes(query)) ||
+                    (s.examCode && s.examCode.toLowerCase().includes(query))
+                );
+            }
+
+            const tbody = document.getElementById('myExamsTableBody');
+            if (list.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="7" class="empty-state-box">
+                            <div class="empty-state-icon">📋</div>
+                            <div style="font-size: 15px; font-weight: 600; margin-bottom: 4px;">No examination attempts recorded yet</div>
+                            <p style="font-size: 13px; margin: 0;">Obtain your examination code from your faculty and click "Enter Exam Code" above.</p>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            tbody.innerHTML = list.map(sub => {
+                const exam = ExamStore.getExamById(sub.examId);
+                const isPublished = sub.status === 'Result Published' || (exam && exam.scoreSheetStatus === 'Result Published' && sub.status !== 'Failed — Security Violation');
+                const isViolation = sub.status === 'Failed — Security Violation';
+
+                let evalLabel = '';
+                if (isViolation) {
+                    evalLabel = `<span class="status-badge badge-violation">Failed — Security Violation</span>`;
+                } else if (isPublished) {
+                    evalLabel = `<span class="status-badge badge-published">Score: ${sub.obtainedScore}/${sub.totalMarks} (${Math.round((sub.obtainedScore/sub.totalMarks)*100)}%)</span>`;
+                } else if (sub.status === 'Under Correction') {
+                    evalLabel = `<span class="status-badge badge-correction">Under Correction</span>`;
+                } else {
+                    evalLabel = `<span class="status-badge badge-submitted">Result Pending</span>`;
+                }
+
+                let actionBtn = '';
+                if (isPublished) {
+                    actionBtn = `<a href="student-results.html" class="btn btn-sm" style="padding: 5px 12px;">View Result</a>`;
+                } else if (isViolation) {
+                    actionBtn = `<a href="student-results.html" class="btn btn-secondary btn-sm" style="padding: 5px 12px; color: #b91c1c; border-color: #fca5a5;">Incident Log</a>`;
+                } else {
+                    actionBtn = `<a href="student-results.html" class="btn btn-secondary btn-sm" style="padding: 5px 12px;">Track Status</a>`;
+                }
+
+                const dateStr = sub.submittedAt ? new Date(sub.submittedAt).toLocaleDateString() : (exam ? exam.date : 'Recent');
+
+                return `
+                    <tr>
+                        <td>
+                            <strong>${escapeHtml(sub.examName)}</strong>
+                            <div style="font-size: 12px; color: var(--text-light);">${exam ? escapeHtml(exam.subject) : 'Academic Course'}</div>
+                        </td>
+                        <td><span class="exam-code-box" style="padding: 2px 8px; font-size: 12px;">${escapeHtml(sub.examCode || 'N/A')}</span></td>
+                        <td>
+                            <span style="font-size: 12px; font-weight: 600;">
+                                ${sub.examType === 'jpeg' ? '📷 JPEG Answer' : '◉ MCQ'}
+                            </span>
+                        </td>
+                        <td>${dateStr}</td>
+                        <td>${AppNav.getStatusBadge(sub.status)}</td>
+                        <td>${evalLabel}</td>
+                        <td style="text-align: right;">${actionBtn}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            initStudentDashboard();
+        });
+    </script>
+</body>
+</html>

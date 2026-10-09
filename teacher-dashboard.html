@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teacher Dashboard - Online Examination System</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="app-styles.css">
+</head>
+<body>
+    <header></header>
+
+    <div class="container">
+        <!-- Dashboard Header -->
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px; flex-wrap: wrap; gap: 15px;">
+            <div>
+                <h1 style="font-size: 26px; margin-bottom: 4px;">Faculty Examination Portal</h1>
+                <p style="color: var(--text-light); font-size: 14px; margin: 0;">Create examinations, manage question banks, review student answer sheets, and publish final score sheets.</p>
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <a href="teacher-create-exam.html" class="btn">+ Create New Exam</a>
+            </div>
+        </div>
+
+        <!-- Metric Cards -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon">📄</div>
+                <div class="stat-content">
+                    <span class="stat-value" id="statMyExams">0</span>
+                    <span class="stat-label">My Examinations</span>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">🟢</div>
+                <div class="stat-content">
+                    <span class="stat-value" id="statActiveExams">0</span>
+                    <span class="stat-label">Active Published Exams</span>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon" style="color: #7e22ce; background: #faf5ff;">✍️</div>
+                <div class="stat-content">
+                    <span class="stat-value" id="statPendingCorrections" style="color: #7e22ce;">0</span>
+                    <span class="stat-label">Pending Corrections</span>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon" style="color: #15803d; background: #f0fdf4;">📊</div>
+                <div class="stat-content">
+                    <span class="stat-value" id="statPublishedSheets" style="color: #15803d;">0</span>
+                    <span class="stat-label">Published Score Sheets</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Access Dashboard Cards -->
+        <div class="dashboard-grid" style="margin-bottom: 32px; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));">
+            <a href="teacher-create-exam.html" class="card dashboard-card">
+                <div style="font-size: 32px; margin-bottom: 12px;">➕</div>
+                <h3>Create Examination</h3>
+                <p style="font-size: 13px; color: var(--text-light);">Create MCQ or JPEG handwritten exams with customized rules and unique codes.</p>
+                <span class="btn btn-sm" style="margin-top: 10px;">Create Exam →</span>
+            </a>
+
+            <a href="teacher-correct-exam.html" class="card dashboard-card">
+                <div style="font-size: 32px; margin-bottom: 12px;">📝</div>
+                <h3>Correct Answer Sheets</h3>
+                <p style="font-size: 13px; color: var(--text-light);">Inspect student submissions, view high-res uploaded JPEG sheets, and award marks.</p>
+                <span class="btn btn-sm" style="margin-top: 10px;">Open Correction UI →</span>
+            </a>
+
+            <a href="teacher-scoresheet.html" class="card dashboard-card">
+                <div style="font-size: 32px; margin-bottom: 12px;">📑</div>
+                <h3>Score Sheets</h3>
+                <p style="font-size: 13px; color: var(--text-light);">Review class scores, verify grading, and control visibility to publish results to students.</p>
+                <span class="btn btn-sm" style="margin-top: 10px;">Manage Score Sheets →</span>
+            </a>
+
+            <a href="teacher-results.html" class="card dashboard-card">
+                <div style="font-size: 32px; margin-bottom: 12px;">📈</div>
+                <h3>Past Results Archive</h3>
+                <p style="font-size: 13px; color: var(--text-light);">Browse completed historical examinations, candidate rosters, and final grade reports.</p>
+                <span class="btn btn-sm" style="margin-top: 10px;">View Archives →</span>
+            </a>
+        </div>
+
+        <!-- Recent Examinations Table -->
+        <div class="card">
+            <div class="section-toolbar">
+                <div>
+                    <h3 style="margin: 0; font-size: 18px;">Recently Managed Examinations</h3>
+                    <p style="color: var(--text-light); font-size: 13px; margin: 4px 0 0 0;">Overview of active and draft examinations assigned to you.</p>
+                </div>
+                <a href="teacher-exams.html" class="btn btn-secondary btn-sm">View All Exams →</a>
+            </div>
+
+            <div class="table-responsive">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Exam Name</th>
+                            <th>Exam Code</th>
+                            <th>Type</th>
+                            <th>Total Marks</th>
+                            <th>Status</th>
+                            <th>Score Sheet Status</th>
+                            <th style="text-align: right;">Quick Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="recentExamsTable"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script src="exam-store.js"></script>
+    <script src="app-utils.js"></script>
+    <script src="script.js"></script>
+    <script>
+        function initTeacherDashboard() {
+            let user = ExamStore.getCurrentUser();
+            if (!user || user.role !== 'teacher') {
+                user = { fullName: 'Prof. Robert Smith', role: 'teacher', username: 'rsmith' };
+                ExamStore.setCurrentUser(user);
+            }
+            AppNav.render('teacher-dashboard');
+
+            const exams = ExamStore.getExams();
+            const active = exams.filter(e => e.status === 'Published / Active');
+            const subs = ExamStore.getSubmissions();
+            const pendingCorrection = subs.filter(s => s.status === 'Under Correction' || s.status === 'Submitted');
+            const publishedSheets = exams.filter(e => e.scoreSheetStatus === 'Result Published');
+
+            document.getElementById('statMyExams').textContent = exams.length;
+            document.getElementById('statActiveExams').textContent = active.length;
+            document.getElementById('statPendingCorrections').textContent = pendingCorrection.length;
+            document.getElementById('statPublishedSheets').textContent = publishedSheets.length;
+
+            renderRecentExams(exams.slice(0, 5));
+        }
+
+        function renderRecentExams(exams) {
+            const tbody = document.getElementById('recentExamsTable');
+            if (exams.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" class="empty-state-box">No examinations found. Create your first exam to begin!</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = exams.map(e => `
+                <tr>
+                    <td>
+                        <strong>${escapeHtml(e.name)}</strong>
+                        <div style="font-size: 12px; color: var(--text-light);">${escapeHtml(e.subject)} · ${e.duration} mins</div>
+                    </td>
+                    <td>
+                        <span class="exam-code-box" style="padding: 2px 8px; font-size: 12px;">${escapeHtml(e.examCode)}</span>
+                    </td>
+                    <td>
+                        <span style="font-size: 12px; font-weight: 600;">
+                            ${e.examType === 'jpeg' ? '📷 JPEG' : '◉ MCQ'}
+                        </span>
+                    </td>
+                    <td><strong>${e.totalMarks}</strong></td>
+                    <td>${AppNav.getStatusBadge(e.status)}</td>
+                    <td>${AppNav.getStatusBadge(e.scoreSheetStatus || 'Not Evaluated')}</td>
+                    <td style="text-align: right;">
+                        <a href="teacher-correct-exam.html?id=${e.id}" class="btn btn-secondary btn-sm">Correct</a>
+                        <a href="teacher-scoresheet.html?id=${e.id}" class="btn btn-secondary btn-sm">Score Sheet</a>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        document.addEventListener('DOMContentLoaded', initTeacherDashboard);
+    </script>
+</body>
+</html>

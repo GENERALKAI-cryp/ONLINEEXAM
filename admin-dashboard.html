@@ -1,0 +1,814 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Online Examination System</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="app-styles.css">
+</head>
+<body>
+    <header></header>
+
+    <div class="container">
+        <!-- Dashboard Top Banner -->
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px; flex-wrap: wrap; gap: 15px;">
+            <div>
+                <h1 style="font-size: 26px; margin-bottom: 4px;">University Administration Console</h1>
+                <p style="color: var(--text-light); font-size: 14px; margin: 0;">Central control for students, faculty, examinations, submissions, and academic score sheets.</p>
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <button onclick="openAddStudentModal()" class="btn btn-sm">+ Add Student</button>
+                <button onclick="openAddTeacherModal()" class="btn btn-sm btn-secondary">+ Add Teacher</button>
+            </div>
+        </div>
+
+        <!-- Global Metric Cards -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon">🎓</div>
+                <div class="stat-content">
+                    <span class="stat-value" id="countStudents">0</span>
+                    <span class="stat-label">Enrolled Students</span>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">👨‍🏫</div>
+                <div class="stat-content">
+                    <span class="stat-value" id="countTeachers">0</span>
+                    <span class="stat-label">Faculty Teachers</span>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">📑</div>
+                <div class="stat-content">
+                    <span class="stat-value" id="countExams">0</span>
+                    <span class="stat-label">Total Examinations</span>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">📝</div>
+                <div class="stat-content">
+                    <span class="stat-value" id="countSubmissions">0</span>
+                    <span class="stat-label">Exam Submissions</span>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon" style="color: #ef4444; background: #fee2e2;">🛡️</div>
+                <div class="stat-content">
+                    <span class="stat-value" id="countViolations" style="color: #ef4444;">0</span>
+                    <span class="stat-label">Security Violations</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section Navigation Tabs -->
+        <div style="display: flex; gap: 8px; border-bottom: 2px solid var(--border-color); margin-bottom: 24px; overflow-x: auto;">
+            <button class="nav-tab active" onclick="switchAdminTab('students', this)">Students Management</button>
+            <button class="nav-tab" onclick="switchAdminTab('teachers', this)">Teachers Management</button>
+            <button class="nav-tab" onclick="switchAdminTab('exams', this)">Examinations</button>
+            <button class="nav-tab" onclick="switchAdminTab('submissions', this)">Attempts & Submissions</button>
+            <button class="nav-tab" onclick="switchAdminTab('results', this)">Results & Score Sheets</button>
+        </div>
+
+        <!-- TAB 1: STUDENTS MANAGEMENT -->
+        <div id="tab-students" class="admin-tab-content">
+            <div class="card">
+                <div class="section-toolbar">
+                    <h3 style="margin: 0; font-size: 18px;">Registered Students Directory</h3>
+                    <div class="search-filter-box">
+                        <input type="text" id="searchStudentInput" class="search-input" placeholder="Search student by name, ID or email..." oninput="renderStudentsTable()">
+                    </div>
+                </div>
+                <div class="table-responsive">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Student Name</th>
+                                <th>Username / ID</th>
+                                <th>Email</th>
+                                <th>Department</th>
+                                <th>Status</th>
+                                <th style="text-align: right;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="studentsTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 2: TEACHERS MANAGEMENT -->
+        <div id="tab-teachers" class="admin-tab-content" style="display: none;">
+            <div class="card">
+                <div class="section-toolbar">
+                    <h3 style="margin: 0; font-size: 18px;">Faculty & Instructor Directory</h3>
+                    <div class="search-filter-box">
+                        <input type="text" id="searchTeacherInput" class="search-input" placeholder="Search teacher by name or department..." oninput="renderTeachersTable()">
+                    </div>
+                </div>
+                <div class="table-responsive">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Teacher Name</th>
+                                <th>Username</th>
+                                <th>Department</th>
+                                <th>Email</th>
+                                <th>Status</th>
+                                <th style="text-align: right;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="teachersTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 3: EXAMINATIONS MANAGEMENT -->
+        <div id="tab-exams" class="admin-tab-content" style="display: none;">
+            <div class="card">
+                <div class="section-toolbar">
+                    <h3 style="margin: 0; font-size: 18px;">Curriculum Examinations</h3>
+                    <div class="search-filter-box">
+                        <input type="text" id="searchExamInput" class="search-input" placeholder="Search exam name or code..." oninput="renderExamsTable()">
+                        <select id="filterExamStatus" class="filter-select" onchange="renderExamsTable()">
+                            <option value="all">All Statuses</option>
+                            <option value="Published / Active">Published / Active</option>
+                            <option value="Draft">Draft</option>
+                            <option value="Completed">Completed</option>
+                            <option value="Closed">Closed</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="table-responsive">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Exam Name</th>
+                                <th>Exam Code</th>
+                                <th>Type</th>
+                                <th>Date & Time</th>
+                                <th>Duration</th>
+                                <th>Total Marks</th>
+                                <th>Status</th>
+                                <th style="text-align: right;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="examsTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 4: ATTEMPTS & SUBMISSIONS -->
+        <div id="tab-submissions" class="admin-tab-content" style="display: none;">
+            <div class="card">
+                <div class="section-toolbar">
+                    <div>
+                        <h3 style="margin: 0; font-size: 18px;">Student Attempts & Security Violations</h3>
+                        <p style="color: var(--text-light); font-size: 13px; margin: 4px 0 0 0;">Inspect raw submissions, uploaded JPEG sheets, and proctoring tab violation records.</p>
+                    </div>
+                    <div class="search-filter-box">
+                        <select id="filterSubStatus" class="filter-select" onchange="renderSubmissionsTable()">
+                            <option value="all">All Attempts</option>
+                            <option value="Failed — Security Violation">Security Violations Only</option>
+                            <option value="Submitted">Submitted</option>
+                            <option value="Under Correction">Under Correction</option>
+                            <option value="Result Published">Result Published</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="table-responsive">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Student</th>
+                                <th>Exam Name</th>
+                                <th>Type</th>
+                                <th>Submitted At</th>
+                                <th>Score</th>
+                                <th>Attempt Status</th>
+                                <th style="text-align: right;">Details</th>
+                            </tr>
+                        </thead>
+                        <tbody id="submissionsTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 5: RESULTS & SCORE SHEETS -->
+        <div id="tab-results" class="admin-tab-content" style="display: none;">
+            <div class="card">
+                <div class="section-toolbar">
+                    <div>
+                        <h3 style="margin: 0; font-size: 18px;">Examinations Results & Score Sheet Visibility</h3>
+                        <p style="color: var(--text-light); font-size: 13px; margin: 4px 0 0 0;">Control whether score sheets are visible to students or held under correction.</p>
+                    </div>
+                </div>
+                <div class="table-responsive">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Examination</th>
+                                <th>Code</th>
+                                <th>Faculty</th>
+                                <th>Total Students</th>
+                                <th>Score Sheet Status</th>
+                                <th style="text-align: right;">Visibility Control</th>
+                            </tr>
+                        </thead>
+                        <tbody id="resultsTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: ADD / EDIT STUDENT -->
+    <div id="studentModal" class="modal-overlay">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3 id="studentModalTitle">Add New Student</h3>
+                <button class="modal-close-btn" onclick="closeStudentModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="studentEditId">
+                <div class="form-group">
+                    <label>Full Name *</label>
+                    <input type="text" id="studentFullName" class="form-control" placeholder="e.g. Maya Lin" required>
+                </div>
+                <div class="form-group">
+                    <label>Username / Student ID *</label>
+                    <input type="text" id="studentUsername" class="form-control" placeholder="e.g. mlin2027" required>
+                </div>
+                <div class="form-group">
+                    <label>Email Address</label>
+                    <input type="email" id="studentEmail" class="form-control" placeholder="e.g. mlin@student.university.edu">
+                </div>
+                <div class="form-group">
+                    <label>Department / Degree</label>
+                    <input type="text" id="studentDept" class="form-control" value="B.Tech Computer Science">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeStudentModal()">Cancel</button>
+                <button class="btn" onclick="saveStudent()">Save Student</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: ADD / EDIT TEACHER -->
+    <div id="teacherModal" class="modal-overlay">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3 id="teacherModalTitle">Add Faculty Teacher</h3>
+                <button class="modal-close-btn" onclick="closeTeacherModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="teacherEditId">
+                <div class="form-group">
+                    <label>Teacher Full Name *</label>
+                    <input type="text" id="teacherFullName" class="form-control" placeholder="e.g. Prof. Alan Turing" required>
+                </div>
+                <div class="form-group">
+                    <label>Faculty Username *</label>
+                    <input type="text" id="teacherUsername" class="form-control" placeholder="e.g. aturing" required>
+                </div>
+                <div class="form-group">
+                    <label>Email Address</label>
+                    <input type="email" id="teacherEmail" class="form-control" placeholder="e.g. a.turing@university.edu">
+                </div>
+                <div class="form-group">
+                    <label>Academic Department</label>
+                    <input type="text" id="teacherDept" class="form-control" value="Computer Science & Engineering">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeTeacherModal()">Cancel</button>
+                <button class="btn" onclick="saveTeacher()">Save Faculty Member</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: VIEW ATTEMPT / JPEG VIEWER -->
+    <div id="attemptModal" class="modal-overlay">
+        <div class="modal-card modal-lg">
+            <div class="modal-header">
+                <h3 id="attemptModalTitle">Submission Details</h3>
+                <button class="modal-close-btn" onclick="closeAttemptModal()">×</button>
+            </div>
+            <div class="modal-body" id="attemptModalContent">
+                <!-- Dynamically populated -->
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeAttemptModal()">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="exam-store.js"></script>
+    <script src="app-utils.js"></script>
+    <script src="script.js"></script>
+    <script>
+        // Tab Switcher styling helper
+        const style = document.createElement('style');
+        style.innerHTML = `
+            .nav-tab {
+                background: none;
+                border: none;
+                padding: 10px 18px;
+                font-size: 14px;
+                font-weight: 600;
+                color: var(--text-light);
+                cursor: pointer;
+                border-bottom: 2px solid transparent;
+                transition: all 0.2s;
+            }
+            .nav-tab:hover { color: var(--primary-color); }
+            .nav-tab.active {
+                color: var(--primary-color);
+                border-bottom-color: var(--primary-color);
+            }
+        `;
+        document.head.appendChild(style);
+
+        function switchAdminTab(tabKey, tabBtn) {
+            document.querySelectorAll('.admin-tab-content').forEach(el => el.style.display = 'none');
+            document.querySelectorAll('.nav-tab').forEach(el => el.classList.remove('active'));
+            const target = document.getElementById('tab-' + tabKey);
+            if (target) target.style.display = 'block';
+            if (tabBtn) tabBtn.classList.add('active');
+        }
+
+        function initAdminDashboard() {
+            // Check admin session, fallback to admin demo user
+            let currentUser = ExamStore.getCurrentUser();
+            if (!currentUser || currentUser.role !== 'admin') {
+                currentUser = { fullName: 'Dr. Arthur Vance (Dean)', role: 'admin', username: 'admin' };
+                ExamStore.setCurrentUser(currentUser);
+            }
+            AppNav.render('admin-dashboard');
+
+            renderCounts();
+            renderStudentsTable();
+            renderTeachersTable();
+            renderExamsTable();
+            renderSubmissionsTable();
+            renderResultsTable();
+
+            // Hash check
+            const hash = window.location.hash.replace('#', '');
+            if (['students', 'teachers', 'exams', 'submissions', 'results'].includes(hash)) {
+                const btn = Array.from(document.querySelectorAll('.nav-tab')).find(b => b.textContent.toLowerCase().includes(hash));
+                switchAdminTab(hash, btn);
+            }
+        }
+
+        function renderCounts() {
+            const students = ExamStore.getStudents();
+            const teachers = ExamStore.getTeachers();
+            const exams = ExamStore.getExams();
+            const submissions = ExamStore.getSubmissions();
+            const violations = submissions.filter(s => s.status === 'Failed — Security Violation');
+
+            document.getElementById('countStudents').textContent = students.length;
+            document.getElementById('countTeachers').textContent = teachers.length;
+            document.getElementById('countExams').textContent = exams.length;
+            document.getElementById('countSubmissions').textContent = submissions.length;
+            document.getElementById('countViolations').textContent = violations.length;
+        }
+
+        // --- STUDENTS TABLE ---
+        function renderStudentsTable() {
+            const query = (document.getElementById('searchStudentInput')?.value || '').toLowerCase();
+            let students = ExamStore.getStudents();
+            if (query) {
+                students = students.filter(s => 
+                    s.fullName.toLowerCase().includes(query) || 
+                    s.username.toLowerCase().includes(query) ||
+                    (s.email && s.email.toLowerCase().includes(query))
+                );
+            }
+
+            const tbody = document.getElementById('studentsTableBody');
+            if (students.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="empty-state-box">No students matching criteria</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = students.map(s => `
+                <tr>
+                    <td><strong>${escapeHtml(s.fullName)}</strong></td>
+                    <td><code>${escapeHtml(s.username)}</code></td>
+                    <td>${escapeHtml(s.email || '—')}</td>
+                    <td>${escapeHtml(s.department || 'General')}</td>
+                    <td>${AppNav.getStatusBadge(s.status || 'Active')}</td>
+                    <td style="text-align: right;">
+                        <button class="btn btn-secondary btn-sm" onclick="editStudent('${s.id}')">Edit</button>
+                        <button class="btn btn-sm ${s.status === 'Active' ? 'btn-outline-danger' : 'btn-secondary'}" onclick="toggleUserStatus('${s.id}')">
+                            ${s.status === 'Active' ? 'Deactivate' : 'Activate'}
+                        </button>
+                        <button class="btn btn-danger btn-sm" onclick="deleteStudent('${s.id}')">Remove</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // --- TEACHERS TABLE ---
+        function renderTeachersTable() {
+            const query = (document.getElementById('searchTeacherInput')?.value || '').toLowerCase();
+            let teachers = ExamStore.getTeachers();
+            if (query) {
+                teachers = teachers.filter(t => 
+                    t.fullName.toLowerCase().includes(query) || 
+                    t.username.toLowerCase().includes(query) ||
+                    (t.department && t.department.toLowerCase().includes(query))
+                );
+            }
+
+            const tbody = document.getElementById('teachersTableBody');
+            if (teachers.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="empty-state-box">No teachers found</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = teachers.map(t => `
+                <tr>
+                    <td><strong>${escapeHtml(t.fullName)}</strong></td>
+                    <td><code>${escapeHtml(t.username)}</code></td>
+                    <td>${escapeHtml(t.department || 'Computer Science')}</td>
+                    <td>${escapeHtml(t.email || '—')}</td>
+                    <td>${AppNav.getStatusBadge(t.status || 'Active')}</td>
+                    <td style="text-align: right;">
+                        <button class="btn btn-secondary btn-sm" onclick="editTeacher('${t.id}')">Edit</button>
+                        <button class="btn btn-sm ${t.status === 'Active' ? 'btn-outline-danger' : 'btn-secondary'}" onclick="toggleUserStatus('${t.id}')">
+                            ${t.status === 'Active' ? 'Deactivate' : 'Activate'}
+                        </button>
+                        <button class="btn btn-danger btn-sm" onclick="deleteTeacher('${t.id}')">Remove</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // --- EXAMS TABLE ---
+        function renderExamsTable() {
+            const query = (document.getElementById('searchExamInput')?.value || '').toLowerCase();
+            const filter = document.getElementById('filterExamStatus')?.value || 'all';
+            let exams = ExamStore.getExams();
+
+            if (filter !== 'all') {
+                exams = exams.filter(e => e.status === filter);
+            }
+            if (query) {
+                exams = exams.filter(e => 
+                    e.name.toLowerCase().includes(query) || 
+                    (e.examCode && e.examCode.toLowerCase().includes(query))
+                );
+            }
+
+            const tbody = document.getElementById('examsTableBody');
+            if (exams.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="8" class="empty-state-box">No examinations found</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = exams.map(e => `
+                <tr>
+                    <td>
+                        <strong>${escapeHtml(e.name)}</strong>
+                        <div style="font-size: 12px; color: var(--text-light);">${escapeHtml(e.subject)} · Faculty: ${escapeHtml(e.teacherName || 'Faculty')}</div>
+                    </td>
+                    <td><span class="exam-code-box" style="padding: 3px 8px; font-size: 13px;">${escapeHtml(e.examCode)}</span></td>
+                    <td>
+                        <span style="font-weight: 600; font-size: 12px; text-transform: uppercase;">
+                            ${e.examType === 'jpeg' ? '📷 JPEG Answer' : '◉ MCQ (' + (e.checkingMode === 'auto' ? 'Auto' : 'Manual') + ')'}
+                        </span>
+                    </td>
+                    <td>${e.date} at ${e.time}</td>
+                    <td>${e.duration} min</td>
+                    <td><strong>${e.totalMarks}</strong></td>
+                    <td>${AppNav.getStatusBadge(e.status)}</td>
+                    <td style="text-align: right;">
+                        <button class="btn btn-secondary btn-sm" onclick="changeExamStatus('${e.id}')">Change Status</button>
+                        <button class="btn btn-danger btn-sm" onclick="deleteExam('${e.id}')">Delete</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // --- ATTEMPTS & SUBMISSIONS TABLE ---
+        function renderSubmissionsTable() {
+            const filter = document.getElementById('filterSubStatus')?.value || 'all';
+            let subs = ExamStore.getSubmissions();
+
+            if (filter !== 'all') {
+                subs = subs.filter(s => s.status === filter);
+            }
+
+            const tbody = document.getElementById('submissionsTableBody');
+            if (subs.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" class="empty-state-box">No submissions found</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = subs.map(s => {
+                const isViolation = s.status === 'Failed — Security Violation';
+                return `
+                <tr style="${isViolation ? 'background: rgba(239, 68, 68, 0.04);' : ''}">
+                    <td>
+                        <strong>${escapeHtml(s.studentName)}</strong>
+                        <div style="font-size: 12px; color: var(--text-light);">ID: ${escapeHtml(s.studentId || s.username)}</div>
+                    </td>
+                    <td>
+                        ${escapeHtml(s.examName)}
+                        <div style="font-size: 12px; color: var(--text-light);">Code: ${escapeHtml(s.examCode)}</div>
+                    </td>
+                    <td><span style="font-size: 12px; font-weight: 600;">${s.examType === 'jpeg' ? '📷 JPEG' : '◉ MCQ'}</span></td>
+                    <td>${s.submittedAt ? new Date(s.submittedAt).toLocaleTimeString() : 'In Progress'}</td>
+                    <td><strong>${isViolation ? '0' : s.obtainedScore} / ${s.totalMarks}</strong></td>
+                    <td>
+                        ${AppNav.getStatusBadge(s.status)}
+                        ${isViolation ? `<div style="font-size: 11px; color: #ef4444; margin-top: 3px;">⚠ ${escapeHtml(s.securityViolation?.reason || 'Tab switch')}</div>` : ''}
+                    </td>
+                    <td style="text-align: right;">
+                        <button class="btn btn-secondary btn-sm" onclick="viewAttemptDetails('${s.id}')">View Details</button>
+                    </td>
+                </tr>
+                `;
+            }).join('');
+        }
+
+        // --- RESULTS & SCORE SHEETS TABLE ---
+        function renderResultsTable() {
+            const exams = ExamStore.getExams();
+            const tbody = document.getElementById('resultsTableBody');
+
+            tbody.innerHTML = exams.map(e => {
+                const subs = ExamStore.getSubmissionsForExam(e.id);
+                const isPublished = e.scoreSheetStatus === 'Result Published';
+                return `
+                <tr>
+                    <td>
+                        <strong>${escapeHtml(e.name)}</strong>
+                        <div style="font-size: 12px; color: var(--text-light);">${escapeHtml(e.subject)} · Marks: ${e.totalMarks}</div>
+                    </td>
+                    <td><span class="exam-code-box" style="padding: 2px 6px; font-size: 12px;">${escapeHtml(e.examCode)}</span></td>
+                    <td>${escapeHtml(e.teacherName || 'Faculty')}</td>
+                    <td><strong>${subs.length} candidates</strong></td>
+                    <td>${AppNav.getStatusBadge(e.scoreSheetStatus || 'Not Evaluated')}</td>
+                    <td style="text-align: right;">
+                        ${isPublished 
+                            ? `<button class="btn btn-outline-danger btn-sm" onclick="toggleAdminPublish('${e.id}', false)">Revoke Publication</button>` 
+                            : `<button class="btn btn-sm" onclick="toggleAdminPublish('${e.id}', true)">Publish to Students</button>`
+                        }
+                    </td>
+                </tr>
+                `;
+            }).join('');
+        }
+
+        // --- STUDENT CRUD MODAL HANDLERS ---
+        function openAddStudentModal() {
+            document.getElementById('studentEditId').value = '';
+            document.getElementById('studentModalTitle').textContent = 'Add New Student';
+            document.getElementById('studentFullName').value = '';
+            document.getElementById('studentUsername').value = '';
+            document.getElementById('studentEmail').value = '';
+            document.getElementById('studentDept').value = 'B.Tech Computer Science';
+            document.getElementById('studentModal').classList.add('open');
+        }
+
+        function editStudent(id) {
+            const user = ExamStore.getUsers().find(u => u.id === id);
+            if (!user) return;
+            document.getElementById('studentEditId').value = user.id;
+            document.getElementById('studentModalTitle').textContent = 'Edit Student Details';
+            document.getElementById('studentFullName').value = user.fullName;
+            document.getElementById('studentUsername').value = user.username;
+            document.getElementById('studentEmail').value = user.email || '';
+            document.getElementById('studentDept').value = user.department || '';
+            document.getElementById('studentModal').classList.add('open');
+        }
+
+        function closeStudentModal() {
+            document.getElementById('studentModal').classList.remove('open');
+        }
+
+        function saveStudent() {
+            const id = document.getElementById('studentEditId').value;
+            const fullName = document.getElementById('studentFullName').value.trim();
+            const username = document.getElementById('studentUsername').value.trim();
+            const email = document.getElementById('studentEmail').value.trim();
+            const department = document.getElementById('studentDept').value.trim();
+
+            if (!fullName || !username) {
+                Toast.show('Student name and username are required', 'warning');
+                return;
+            }
+
+            if (id) {
+                ExamStore.updateUser(id, { fullName, username, email, department });
+                Toast.show('Student updated successfully', 'success');
+            } else {
+                ExamStore.addUser({ fullName, username, email, department, role: 'student', status: 'Active' });
+                Toast.show('New student added successfully', 'success');
+            }
+            closeStudentModal();
+            renderStudentsTable();
+            renderCounts();
+        }
+
+        function deleteStudent(id) {
+            if (confirm('Are you sure you want to remove this student account?')) {
+                ExamStore.deleteUser(id);
+                Toast.show('Student account removed', 'danger');
+                renderStudentsTable();
+                renderCounts();
+            }
+        }
+
+        // --- TEACHER CRUD MODAL HANDLERS ---
+        function openAddTeacherModal() {
+            document.getElementById('teacherEditId').value = '';
+            document.getElementById('teacherModalTitle').textContent = 'Add Faculty Teacher';
+            document.getElementById('teacherFullName').value = '';
+            document.getElementById('teacherUsername').value = '';
+            document.getElementById('teacherEmail').value = '';
+            document.getElementById('teacherDept').value = 'Computer Science';
+            document.getElementById('teacherModal').classList.add('open');
+        }
+
+        function editTeacher(id) {
+            const user = ExamStore.getUsers().find(u => u.id === id);
+            if (!user) return;
+            document.getElementById('teacherEditId').value = user.id;
+            document.getElementById('teacherModalTitle').textContent = 'Edit Faculty Details';
+            document.getElementById('teacherFullName').value = user.fullName;
+            document.getElementById('teacherUsername').value = user.username;
+            document.getElementById('teacherEmail').value = user.email || '';
+            document.getElementById('teacherDept').value = user.department || '';
+            document.getElementById('teacherModal').classList.add('open');
+        }
+
+        function closeTeacherModal() {
+            document.getElementById('teacherModal').classList.remove('open');
+        }
+
+        function saveTeacher() {
+            const id = document.getElementById('teacherEditId').value;
+            const fullName = document.getElementById('teacherFullName').value.trim();
+            const username = document.getElementById('teacherUsername').value.trim();
+            const email = document.getElementById('teacherEmail').value.trim();
+            const department = document.getElementById('teacherDept').value.trim();
+
+            if (!fullName || !username) {
+                Toast.show('Teacher name and username are required', 'warning');
+                return;
+            }
+
+            if (id) {
+                ExamStore.updateUser(id, { fullName, username, email, department });
+                Toast.show('Faculty updated successfully', 'success');
+            } else {
+                ExamStore.addUser({ fullName, username, email, department, role: 'teacher', status: 'Active' });
+                Toast.show('New teacher added successfully', 'success');
+            }
+            closeTeacherModal();
+            renderTeachersTable();
+            renderCounts();
+        }
+
+        function deleteTeacher(id) {
+            if (confirm('Are you sure you want to remove this teacher?')) {
+                ExamStore.deleteUser(id);
+                Toast.show('Teacher account removed', 'danger');
+                renderTeachersTable();
+                renderCounts();
+            }
+        }
+
+        function toggleUserStatus(id) {
+            const newStatus = ExamStore.toggleUserStatus(id);
+            Toast.show(`Account status changed to ${newStatus}`, 'info');
+            renderStudentsTable();
+            renderTeachersTable();
+        }
+
+        // --- EXAM MANAGEMENT ACTIONS ---
+        function changeExamStatus(id) {
+            const exam = ExamStore.getExamById(id);
+            if (!exam) return;
+            const statuses = ['Draft', 'Published / Active', 'Completed', 'Closed'];
+            const nextIdx = (statuses.indexOf(exam.status) + 1) % statuses.length;
+            const nextStatus = statuses[nextIdx];
+
+            ExamStore.updateExam(id, { status: nextStatus });
+            Toast.show(`Exam status updated to "${nextStatus}"`, 'info');
+            renderExamsTable();
+            renderCounts();
+        }
+
+        function deleteExam(id) {
+            if (confirm('Are you sure you want to permanently delete this examination and all its questions?')) {
+                ExamStore.deleteExam(id);
+                Toast.show('Examination deleted', 'danger');
+                renderExamsTable();
+                renderCounts();
+            }
+        }
+
+        function toggleAdminPublish(examId, shouldPublish) {
+            if (shouldPublish) {
+                ExamStore.publishScoreSheet(examId);
+                Toast.show('Score sheet published! Visible to students now.', 'success');
+            } else {
+                ExamStore.unpublishScoreSheet(examId);
+                Toast.show('Score sheet revoked. Students will see "Under Correction".', 'warning');
+            }
+            renderResultsTable();
+            renderSubmissionsTable();
+        }
+
+        // --- ATTEMPT DETAILS MODAL ---
+        function viewAttemptDetails(subId) {
+            const sub = ExamStore.getSubmissionById(subId);
+            if (!sub) return;
+            const exam = ExamStore.getExamById(sub.examId);
+
+            let answersHtml = '';
+            if (sub.examType === 'jpeg') {
+                answersHtml = Object.keys(sub.answers).map((qid, idx) => {
+                    const ans = sub.answers[qid];
+                    const qObj = exam ? exam.questions.find(q => q.id === qid) : null;
+                    return `
+                        <div style="border: 1px solid var(--border-color); border-radius: 8px; padding: 16px; margin-bottom: 16px; background: var(--secondary-color);">
+                            <strong>Question ${idx + 1}:</strong> ${qObj ? escapeHtml(qObj.text) : 'Question ' + qid}
+                            <div style="margin-top: 10px;">
+                                ${ans.fileData ? `
+                                    <div style="display: flex; gap: 15px; align-items: flex-start; flex-wrap: wrap;">
+                                        <img src="${ans.fileData}" style="max-width: 100%; max-height: 280px; border-radius: 6px; border: 1px solid var(--border-color); box-shadow: var(--shadow);">
+                                        <div>
+                                            <p style="margin: 0; font-size: 13px;"><strong>File:</strong> ${escapeHtml(ans.fileName || 'answer.jpg')}</p>
+                                            <p style="margin: 4px 0; font-size: 13px;"><strong>Score Awarded:</strong> ${sub.questionScores[qid] !== undefined ? sub.questionScores[qid] : 'Not graded'}</p>
+                                            <p style="margin: 4px 0; font-size: 13px;"><strong>Remarks:</strong> ${escapeHtml(sub.questionRemarks[qid] || 'None')}</p>
+                                        </div>
+                                    </div>
+                                ` : '<span style="color: var(--danger-color);">No answer file uploaded</span>'}
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            } else {
+                // MCQ
+                answersHtml = Object.keys(sub.answers).map((qid, idx) => {
+                    const ans = sub.answers[qid];
+                    const qObj = exam ? exam.questions.find(q => q.id === qid) : null;
+                    const letter = ans && ans.answer !== undefined ? ['A', 'B', 'C', 'D'][ans.answer] : 'None';
+                    return `
+                        <div style="padding: 10px 14px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <strong>Q${idx + 1}:</strong> ${qObj ? escapeHtml(qObj.text) : qid}
+                                <div style="font-size: 12px; color: var(--text-light); margin-top: 2px;">Selected: <strong>Option ${letter}</strong></div>
+                            </div>
+                            <div>
+                                <span style="font-weight: 700; color: ${sub.questionScores[qid] > 0 ? 'var(--success-color)' : 'var(--danger-color)'};">
+                                    +${sub.questionScores[qid] || 0} Marks
+                                </span>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            document.getElementById('attemptModalContent').innerHTML = `
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; padding: 14px; background: var(--secondary-color); border-radius: 8px;">
+                    <div><strong>Candidate:</strong> ${escapeHtml(sub.studentName)} (${escapeHtml(sub.studentId || sub.username)})</div>
+                    <div><strong>Exam:</strong> ${escapeHtml(sub.examName)} [${escapeHtml(sub.examCode)}]</div>
+                    <div><strong>Status:</strong> ${AppNav.getStatusBadge(sub.status)}</div>
+                    <div><strong>Total Marks:</strong> ${sub.status === 'Failed — Security Violation' ? '0 (Terminated)' : sub.obtainedScore + ' / ' + sub.totalMarks}</div>
+                </div>
+
+                ${sub.securityViolation ? `
+                    <div style="background: #fef2f2; border: 1.5px solid #fecaca; border-radius: 8px; padding: 14px; margin-bottom: 20px; color: #b91c1c;">
+                        <h4 style="margin: 0 0 6px 0; color: #b91c1c;">🛡️ Security Incident Logged</h4>
+                        <p style="margin: 0; font-size: 13px;"><strong>Violation:</strong> ${escapeHtml(sub.securityViolation.reason)}</p>
+                        <p style="margin: 2px 0 0 0; font-size: 12px; color: #7f1d1d;">Logged at: ${new Date(sub.securityViolation.timestamp).toLocaleString()}</p>
+                    </div>
+                ` : ''}
+
+                <h4 style="margin-bottom: 12px;">Submitted Answer Records</h4>
+                <div>${answersHtml || '<p class="empty-state-box">No question responses logged</p>'}</div>
+            `;
+            document.getElementById('attemptModal').classList.add('open');
+        }
+
+        function closeAttemptModal() {
+            document.getElementById('attemptModal').classList.remove('open');
+        }
+
+        document.addEventListener('DOMContentLoaded', initAdminDashboard);
+    </script>
+</body>
+</html>

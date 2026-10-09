@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Score Sheets - Online Examination System</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="app-styles.css">
+</head>
+<body>
+    <header></header>
+
+    <div class="container">
+        <!-- Header -->
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px; flex-wrap: wrap; gap: 15px;">
+            <div>
+                <h1 style="font-size: 26px; margin-bottom: 4px;">Faculty Score Sheet Management</h1>
+                <p style="color: var(--text-light); font-size: 14px; margin: 0;">Review class marks, adjust scores, and control public score sheet release to students.</p>
+            </div>
+            
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <label style="font-size: 13px; font-weight: 600; margin: 0;">Examination:</label>
+                <select id="scoreExamSelector" class="form-control" style="width: auto; padding: 7px 14px; font-size: 13px;" onchange="loadExamScores()">
+                    <!-- Options populated dynamically -->
+                </select>
+            </div>
+        </div>
+
+        <!-- STRICT VISIBILITY STATUS BANNER -->
+        <div id="visibilityNoticeBanner" class="notice-banner notice-warning" style="margin-bottom: 24px;">
+            <!-- Populated dynamically -->
+        </div>
+
+        <!-- Score Sheet Overview Card -->
+        <div class="card" style="margin-bottom: 24px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+                <div>
+                    <h2 style="font-size: 20px; margin: 0 0 4px 0;" id="sheetExamTitle">Exam Title</h2>
+                    <span style="font-size: 13px; color: var(--text-light);" id="sheetExamMeta">Subject · Total Marks: 100</span>
+                </div>
+                
+                <div style="display: flex; align-items: center; gap: 16px;">
+                    <div>
+                        <label style="font-size: 12px; font-weight: 600; display: block; margin-bottom: 4px;">Score Sheet State:</label>
+                        <select id="sheetStatusSelect" class="form-control" style="width: auto; padding: 6px 12px; font-size: 13px; font-weight: 600;" onchange="handleSheetStatusChange()">
+                            <option value="Not Evaluated">Not Evaluated</option>
+                            <option value="Evaluation in Progress">Evaluation in Progress</option>
+                            <option value="Result Published">Result Published (Visible to Students)</option>
+                        </select>
+                    </div>
+
+                    <div id="publishActionContainer">
+                        <!-- Dynamic publish/unpublish button -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Candidate Scores Table -->
+        <div class="card">
+            <div class="section-toolbar">
+                <h3 style="margin: 0; font-size: 18px;">Student Scores & Grades Roster</h3>
+                <span style="font-size: 13px; color: var(--text-light);" id="candidateCountLabel">0 student entries</span>
+            </div>
+
+            <div class="table-responsive">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Student Candidate</th>
+                            <th>Student ID / Username</th>
+                            <th>Score / Total Marks</th>
+                            <th>Percentage</th>
+                            <th>Candidate Status</th>
+                            <th style="text-align: right;">Manual Score Adjustment</th>
+                        </tr>
+                    </thead>
+                    <tbody id="scoresTableBody"></tbody>
+                </table>
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; margin-top: 20px;">
+                <button type="button" class="btn" onclick="saveAllScores()">Save All Score Changes</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="exam-store.js"></script>
+    <script src="app-utils.js"></script>
+    <script src="script.js"></script>
+    <script>
+        let currentExam = null;
+        let currentSubmissions = [];
+
+        function initScoreSheet() {
+            let user = ExamStore.getCurrentUser();
+            if (!user || user.role !== 'teacher') {
+                user = { fullName: 'Prof. Robert Smith', role: 'teacher', username: 'rsmith' };
+                ExamStore.setCurrentUser(user);
+            }
+            AppNav.render('teacher-scoresheet');
+
+            const exams = ExamStore.getExams();
+            const selector = document.getElementById('scoreExamSelector');
+            selector.innerHTML = exams.map(e => `
+                <option value="${e.id}">${escapeHtml(e.name)} [${e.examCode}]</option>
+            `).join('');
+
+            const urlParams = new URLSearchParams(window.location.search);
+            const reqId = urlParams.get('id');
+            if (reqId && exams.some(e => e.id === reqId)) {
+                selector.value = reqId;
+            }
+
+            loadExamScores();
+        }
+
+        function loadExamScores() {
+            const examId = document.getElementById('scoreExamSelector').value;
+            currentExam = ExamStore.getExamById(examId);
+            currentSubmissions = ExamStore.getSubmissionsForExam(examId);
+
+            document.getElementById('sheetExamTitle').textContent = currentExam.name;
+            document.getElementById('sheetExamMeta').textContent = `${currentExam.subject} · Code: ${currentExam.examCode} · Total Marks: ${currentExam.totalMarks}`;
+            document.getElementById('sheetStatusSelect').value = currentExam.scoreSheetStatus || 'Not Evaluated';
+
+            updateVisibilityBanner();
+            renderScoresTable();
+        }
+
+        function updateVisibilityBanner() {
+            const banner = document.getElementById('visibilityNoticeBanner');
+            const actionContainer = document.getElementById('publishActionContainer');
+            const status = currentExam.scoreSheetStatus || 'Not Evaluated';
+
+            if (status === 'Result Published') {
+                banner.className = 'notice-banner notice-success';
+                banner.innerHTML = `
+                    <span>✓ <strong>PUBLISHED TO STUDENTS:</strong> The score sheet is currently <strong>PUBLIC</strong>. Students who attended this exam can now view their scores and report cards.</span>
+                `;
+                actionContainer.innerHTML = `
+                    <button class="btn btn-outline-danger btn-sm" onclick="togglePublish(false)">Revoke / Hide from Students</button>
+                `;
+            } else {
+                banner.className = 'notice-banner notice-warning';
+                banner.innerHTML = `
+                    <span>🔒 <strong>RESTRICTED SCORE SHEET:</strong> This score sheet is strictly <strong>HIDDEN FROM STUDENTS</strong>. Candidates see <em>"Result Pending"</em> or <em>"Under Correction"</em> until you publish.</span>
+                `;
+                actionContainer.innerHTML = `
+                    <button class="btn btn-sm" style="background-color: var(--success-color);" onclick="togglePublish(true)">✓ Publish Score Sheet to Students</button>
+                `;
+            }
+        }
+
+        function renderScoresTable() {
+            const tbody = document.getElementById('scoresTableBody');
+            document.getElementById('candidateCountLabel').textContent = `${currentSubmissions.length} candidate(s)`;
+
+            if (currentSubmissions.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="empty-state-box">No submissions found for this exam.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = currentSubmissions.map((s, idx) => {
+                const isViolation = s.status === 'Failed — Security Violation';
+                const score = isViolation ? 0 : (s.obtainedScore || 0);
+                const pct = currentExam.totalMarks > 0 ? Math.round((score / currentExam.totalMarks) * 100) : 0;
+
+                return `
+                <tr style="${isViolation ? 'background: rgba(239, 68, 68, 0.04);' : ''}">
+                    <td><strong>${escapeHtml(s.studentName)}</strong></td>
+                    <td><code>${escapeHtml(s.studentId || s.username)}</code></td>
+                    <td><strong>${score} / ${currentExam.totalMarks}</strong></td>
+                    <td>
+                        <span style="font-weight: 600; color: ${pct >= 40 ? 'var(--success-color)' : 'var(--danger-color)'};">
+                            ${isViolation ? '0%' : pct + '%'}
+                        </span>
+                    </td>
+                    <td>${AppNav.getStatusBadge(s.status)}</td>
+                    <td style="text-align: right;">
+                        <input type="number" class="form-control" style="width: 80px; display: inline-block; text-align: center; font-weight: 700; padding: 6px;" 
+                               value="${score}" min="0" max="${currentExam.totalMarks}" 
+                               ${isViolation ? 'disabled' : ''} 
+                               onchange="currentSubmissions[${idx}].obtainedScore = parseInt(this.value) || 0">
+                    </td>
+                </tr>
+                `;
+            }).join('');
+        }
+
+        function handleSheetStatusChange() {
+            const newStatus = document.getElementById('sheetStatusSelect').value;
+            if (newStatus === 'Result Published') {
+                togglePublish(true);
+            } else {
+                ExamStore.updateExam(currentExam.id, { scoreSheetStatus: newStatus });
+                currentExam.scoreSheetStatus = newStatus;
+                updateVisibilityBanner();
+                Toast.show(`Score sheet status set to: ${newStatus}`, 'info');
+            }
+        }
+
+        function togglePublish(publish) {
+            if (publish) {
+                if (confirm('Are you sure you want to PUBLISH this score sheet? Scores will immediately become visible to students.')) {
+                    ExamStore.publishScoreSheet(currentExam.id);
+                    currentExam.scoreSheetStatus = 'Result Published';
+                    document.getElementById('sheetStatusSelect').value = 'Result Published';
+                    updateVisibilityBanner();
+                    Toast.show('Score sheet published! Visible to students now.', 'success');
+                    loadExamScores();
+                }
+            } else {
+                ExamStore.unpublishScoreSheet(currentExam.id);
+                currentExam.scoreSheetStatus = 'Evaluation in Progress';
+                document.getElementById('sheetStatusSelect').value = 'Evaluation in Progress';
+                updateVisibilityBanner();
+                Toast.show('Score sheet hidden from students. Status set to "Evaluation in Progress".', 'warning');
+                loadExamScores();
+            }
+        }
+
+        function saveAllScores() {
+            // Save any adjustments made to candidate marks
+            const subs = ExamStore.getSubmissions();
+            currentSubmissions.forEach(cs => {
+                const found = subs.find(s => s.id === cs.id);
+                if (found) {
+                    found.obtainedScore = cs.obtainedScore;
+                }
+            });
+            ExamStore.saveSubmissions(subs);
+            Toast.show('All candidate scores updated successfully!', 'success');
+            loadExamScores();
+        }
+
+        document.addEventListener('DOMContentLoaded', initScoreSheet);
+    </script>
+</body>
+</html>

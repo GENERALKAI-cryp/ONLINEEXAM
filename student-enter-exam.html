@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enter Exam - Online Examination System</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="app-styles.css">
+    <style>
+        .exam-code-entry-card {
+            max-width: 650px;
+            margin: 0 auto 30px auto;
+            text-align: center;
+        }
+        .code-input-group {
+            display: flex;
+            gap: 12px;
+            max-width: 480px;
+            margin: 20px auto 10px auto;
+        }
+        .code-input-lg {
+            font-size: 20px;
+            font-family: monospace;
+            font-weight: 700;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            text-align: center;
+            padding: 12px 16px;
+        }
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 16px;
+            margin: 20px 0;
+        }
+        .info-item {
+            background: var(--secondary-color);
+            padding: 14px 16px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+        }
+        .info-item .info-label {
+            font-size: 11px;
+            color: var(--text-light);
+            text-transform: uppercase;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            display: block;
+            margin-bottom: 4px;
+        }
+        .info-item .info-val {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--text-color);
+        }
+        .rules-box-display {
+            background: #fffbeb;
+            border: 1.5px solid #fde68a;
+            color: #92400e;
+            padding: 20px;
+            border-radius: 10px;
+            white-space: pre-line;
+            font-size: 13.5px;
+            line-height: 1.7;
+            text-align: left;
+            margin: 18px 0;
+        }
+        [data-theme="dark"] .rules-box-display {
+            background: #451a03;
+            border-color: #78350f;
+            color: #fef3c7;
+        }
+        .security-alert-callout {
+            background: #fef2f2;
+            border: 1.5px solid #fecaca;
+            color: #b91c1c;
+            padding: 16px;
+            border-radius: 8px;
+            font-size: 13px;
+            display: flex;
+            gap: 12px;
+            align-items: flex-start;
+            text-align: left;
+            margin-bottom: 20px;
+        }
+        [data-theme="dark"] .security-alert-callout {
+            background: #7f1d1d;
+            border-color: #991b1b;
+            color: #fecaca;
+        }
+    </style>
+</head>
+<body>
+    <header></header>
+
+    <div class="container" style="max-width: 900px;">
+        <!-- Top Title -->
+        <div style="text-align: center; margin-bottom: 30px;">
+            <h1 style="font-size: 26px; margin-bottom: 6px;">Secure Examination Entry Terminal</h1>
+            <p style="color: var(--text-light); font-size: 14px; max-width: 600px; margin: 0 auto;">
+                Examinations are restricted for security. Students can access an examination exclusively through the official access code provided by their faculty.
+            </p>
+        </div>
+
+        <!-- 1. CODE ENTRY INTERFACE -->
+        <div class="card exam-code-entry-card" id="codeEntryCard">
+            <div style="width: 56px; height: 56px; border-radius: 50%; background: rgba(79, 70, 229, 0.1); color: var(--primary-color); display: flex; align-items: center; justify-content: center; font-size: 28px; margin: 0 auto 16px auto;">
+                🔑
+            </div>
+            <h2 style="font-size: 20px; margin-bottom: 6px;">Enter Examination Access Code</h2>
+            <p style="font-size: 13px; color: var(--text-light); max-width: 480px; margin: 0 auto;">
+                Please type your unique 6-to-8 alphanumeric code below to verify your eligibility and load the examination parameters.
+            </p>
+
+            <form onsubmit="handleVerifyCode(); return false;">
+                <div class="code-input-group">
+                    <input type="text" id="examCodeInput" class="form-control code-input-lg" placeholder="EXAM CODE" maxlength="12" autofocus required>
+                    <button type="submit" class="btn" style="padding: 12px 24px; font-weight: 600;">Access Exam</button>
+                </div>
+            </form>
+
+            <!-- Error State Box (Initially hidden) -->
+            <div id="codeErrorBox" style="display: none; margin-top: 18px; padding: 14px 18px; background: #fef2f2; border: 1.5px solid #fecaca; border-radius: 8px; color: #b91c1c; font-size: 13px; text-align: left;">
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <span style="font-size: 18px;">⚠️</span>
+                    <div>
+                        <strong>Invalid Examination Code</strong>
+                        <div id="codeErrorMessage" style="margin-top: 2px;">No active examination matching this code was found. Please verify the code with your teacher.</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Demo Quick Suggestions -->
+            <div style="margin-top: 24px; padding-top: 18px; border-top: 1px solid var(--border-color); font-size: 12.5px; color: var(--text-light);">
+                <strong style="color: var(--text-color);">Demo Codes for Testing:</strong>
+                <div style="margin-top: 8px; display: flex; justify-content: center; gap: 12px; flex-wrap: wrap;">
+                    <button type="button" class="btn btn-secondary btn-sm" style="font-family: monospace;" onclick="setCodeAndVerify('DBMS2027')">DBMS2027 (MCQ)</button>
+                    <button type="button" class="btn btn-secondary btn-sm" style="font-family: monospace;" onclick="setCodeAndVerify('NETSEC99')">NETSEC99 (JPEG)</button>
+                    <button type="button" class="btn btn-secondary btn-sm" style="font-family: monospace;" onclick="setCodeAndVerify('DSA101')">DSA101 (Completed)</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. EXAM INFORMATION REVIEW (Displayed upon valid code) -->
+        <div class="card" id="examInfoCard" style="display: none; animation: modalSlide 0.3s ease-out;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 1px solid var(--border-color); padding-bottom: 16px; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
+                <div>
+                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+                        <span class="status-badge badge-active">Code Verified</span>
+                        <span class="exam-code-box" id="infoExamCode" style="font-size: 12px; padding: 2px 8px;"></span>
+                        <span id="infoTypeBadge"></span>
+                    </div>
+                    <h2 style="font-size: 22px; margin: 0 0 4px 0;" id="infoExamName">Database Systems Examination</h2>
+                    <span style="font-size: 13px; color: var(--text-light);" id="infoSubject">Course Subject</span>
+                </div>
+                <div style="text-align: right;">
+                    <button type="button" class="btn btn-secondary btn-sm" onclick="resetCodeEntry()">← Enter Different Code</button>
+                </div>
+            </div>
+
+            <!-- Exam Parameters Grid -->
+            <div class="info-grid">
+                <div class="info-item">
+                    <span class="info-label">Exam Date</span>
+                    <span class="info-val" id="infoDate">2026-10-15</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Scheduled Time</span>
+                    <span class="info-val" id="infoTime">10:00 AM</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Total Duration</span>
+                    <span class="info-val" id="infoDuration">45 Minutes</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Total Marks</span>
+                    <span class="info-val" id="infoTotalMarks">50 Marks</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Questions</span>
+                    <span class="info-val" id="infoQuestionCount">5 Questions</span>
+                </div>
+            </div>
+
+            <!-- Exam Description -->
+            <div style="margin-bottom: 20px;">
+                <label style="font-size: 13px; font-weight: 600; color: var(--text-color); display: block; margin-bottom: 6px;">Examination Description & Scope:</label>
+                <div id="infoDescription" style="padding: 12px 16px; background: var(--secondary-color); border-radius: 8px; font-size: 13px; color: var(--text-color); line-height: 1.5;">
+                    Covers core syllabus modules.
+                </div>
+            </div>
+
+            <!-- Dedicated Rules Box -->
+            <div style="margin-bottom: 20px;">
+                <label style="font-size: 13px; font-weight: 600; color: var(--text-color); display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                    <span>Official Examination Rules (Mandatory Review) *</span>
+                    <span style="font-size: 11px; color: var(--text-light);">Read thoroughly before proceeding</span>
+                </label>
+                <div class="rules-box-display" id="infoRulesBox">
+                    Rules text...
+                </div>
+            </div>
+
+            <!-- Strict Anti-Cheating & Tab Switching Advisory Callout -->
+            <div class="security-alert-callout">
+                <div style="font-size: 22px;">🛡️</div>
+                <div>
+                    <strong style="display: block; margin-bottom: 3px;">STRICT PROCTORING RULE — TAB SWITCHING IS ZERO TOLERANCE:</strong>
+                    If you navigate away from the test tab, open another browser window, or minimize this window after answering begins, the system will instantly detect the visibility state change, cancel your attempt, and record a permanent <strong>Failed — Security Violation</strong>.
+                </div>
+            </div>
+
+            <!-- Timer Activation Disclosure Notice (Section 20) -->
+            <div class="notice-banner notice-info" style="margin-bottom: 24px;">
+                <span>⏱️ <strong>Timer Start Policy:</strong> The official examination timer has NOT started yet. The countdown timer will strictly commence when you click "Proceed to Examination" and start answering question 1.</span>
+            </div>
+
+            <!-- Agreement Checkbox -->
+            <div style="margin-bottom: 24px; padding: 14px 18px; border: 1.5px solid var(--border-color); border-radius: 8px; background: var(--card-bg);">
+                <label style="display: flex; align-items: flex-start; gap: 12px; cursor: pointer;">
+                    <input type="checkbox" id="rulesConsentCheckbox" style="margin-top: 3px; width: 18px; height: 18px; cursor: pointer;" onchange="toggleProceedButton()">
+                    <span style="font-size: 13px; line-height: 1.5; color: var(--text-color);">
+                        I confirm that I am the registered candidate, have reviewed all rules and technical stipulations above, and agree to undergo proctored examination subject to automatic termination on tab switching.
+                    </span>
+                </label>
+            </div>
+
+            <!-- Proceed Action -->
+            <div style="display: flex; justify-content: flex-end; gap: 12px; align-items: center;">
+                <button type="button" class="btn btn-secondary" onclick="resetCodeEntry()">Cancel</button>
+                <button type="button" class="btn" id="btnProceedExam" style="padding: 12px 28px; font-size: 15px; font-weight: 600;" disabled onclick="launchExamSession()">Proceed to Examination →</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="exam-store.js"></script>
+    <script src="app-utils.js"></script>
+    <script src="script.js"></script>
+    <script>
+        let matchedExam = null;
+
+        function initEnterExam() {
+            let user = ExamStore.getCurrentUser();
+            if (!user || user.role !== 'student') {
+                user = { fullName: 'John Doe', role: 'student', username: 'johndoe', id: 'usr_s1', department: 'B.Tech Computer Science' };
+                ExamStore.setCurrentUser(user);
+            }
+            AppNav.render('student-enter-exam');
+
+            // Check if code in query param
+            const urlParams = new URLSearchParams(window.location.search);
+            const codeParam = urlParams.get('code');
+            if (codeParam) {
+                document.getElementById('examCodeInput').value = codeParam;
+                handleVerifyCode();
+            }
+        }
+
+        function setCodeAndVerify(code) {
+            document.getElementById('examCodeInput').value = code;
+            handleVerifyCode();
+        }
+
+        function handleVerifyCode() {
+            const rawCode = document.getElementById('examCodeInput').value.trim();
+            const errorBox = document.getElementById('codeErrorBox');
+            const errorMsg = document.getElementById('codeErrorMessage');
+            const infoCard = document.getElementById('examInfoCard');
+            const entryCard = document.getElementById('codeEntryCard');
+
+            errorBox.style.display = 'none';
+
+            if (!rawCode) {
+                errorMsg.textContent = 'Please enter an examination access code.';
+                errorBox.style.display = 'block';
+                return;
+            }
+
+            const exam = ExamStore.getExamByCode(rawCode);
+
+            if (!exam) {
+                errorMsg.innerHTML = `No examination matches the code "<strong>${escapeHtml(rawCode)}</strong>". Please double check your code or verify with your teacher.`;
+                errorBox.style.display = 'block';
+                infoCard.style.display = 'none';
+                return;
+            }
+
+            // Check exam status
+            if (exam.status === 'Draft') {
+                errorMsg.innerHTML = `The examination "<strong>${escapeHtml(exam.name)}</strong>" (${escapeHtml(exam.examCode)}) is currently in <em>Draft</em> mode and has not been published for student attendance yet.`;
+                errorBox.style.display = 'block';
+                infoCard.style.display = 'none';
+                return;
+            }
+
+            if (exam.status === 'Closed') {
+                errorMsg.innerHTML = `The examination "<strong>${escapeHtml(exam.name)}</strong>" (${escapeHtml(exam.examCode)}) has been closed by the department and is no longer accepting submissions.`;
+                errorBox.style.display = 'block';
+                infoCard.style.display = 'none';
+                return;
+            }
+
+            // Valid exam found!
+            matchedExam = exam;
+            displayExamInformation(exam);
+        }
+
+        function displayExamInformation(exam) {
+            document.getElementById('infoExamName').textContent = exam.name;
+            document.getElementById('infoSubject').textContent = exam.subject || 'Academic Course Assessment';
+            document.getElementById('infoExamCode').textContent = exam.examCode;
+            document.getElementById('infoDate').textContent = exam.date;
+            document.getElementById('infoTime').textContent = exam.time;
+            document.getElementById('infoDuration').textContent = `${exam.duration} Minutes`;
+            document.getElementById('infoTotalMarks').textContent = `${exam.totalMarks} Marks`;
+            document.getElementById('infoQuestionCount').textContent = `${(exam.questions || []).length} Questions`;
+            document.getElementById('infoDescription').textContent = exam.description || 'Standard departmental examination.';
+            document.getElementById('infoRulesBox').textContent = exam.rules || ExamStore.getDefaultRules();
+
+            // Type badge
+            const typeBadge = document.getElementById('infoTypeBadge');
+            if (exam.examType === 'jpeg') {
+                typeBadge.className = 'status-badge badge-correction';
+                typeBadge.textContent = '📷 JPEG Handwritten Exam';
+            } else {
+                typeBadge.className = 'status-badge badge-active';
+                typeBadge.textContent = '◉ MCQ Exam (' + (exam.checkingMode === 'manual' ? 'Manual Grading' : 'Auto Checking') + ')';
+            }
+
+            // Reset consent
+            document.getElementById('rulesConsentCheckbox').checked = false;
+            document.getElementById('btnProceedExam').disabled = true;
+
+            // Show info card, hide code entry card
+            document.getElementById('codeEntryCard').style.display = 'none';
+            document.getElementById('examInfoCard').style.display = 'block';
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function toggleProceedButton() {
+            const checked = document.getElementById('rulesConsentCheckbox').checked;
+            document.getElementById('btnProceedExam').disabled = !checked;
+        }
+
+        function resetCodeEntry() {
+            matchedExam = null;
+            document.getElementById('examInfoCard').style.display = 'none';
+            document.getElementById('codeEntryCard').style.display = 'block';
+            document.getElementById('codeErrorBox').style.display = 'none';
+            document.getElementById('examCodeInput').focus();
+        }
+
+        function launchExamSession() {
+            if (!matchedExam) return;
+            window.location.href = `student-attend-exam.html?id=${encodeURIComponent(matchedExam.id)}`;
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            initEnterExam();
+        });
+    </script>
+</body>
+</html>

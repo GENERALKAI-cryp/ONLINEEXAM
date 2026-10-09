@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Past Results Archive - Online Examination System</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="app-styles.css">
+</head>
+<body>
+    <header></header>
+
+    <div class="container">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 15px;">
+            <div>
+                <h1 style="font-size: 26px; margin-bottom: 4px;">Past Examination Results Archive</h1>
+                <p style="color: var(--text-light); font-size: 14px; margin: 0;">Comprehensive historical records of completed examinations and class score sheets.</p>
+            </div>
+            <a href="teacher-scoresheet.html" class="btn btn-secondary btn-sm">Active Score Sheets →</a>
+        </div>
+
+        <div class="card">
+            <div class="section-toolbar">
+                <div class="search-filter-box">
+                    <input type="text" id="searchPastInput" class="search-input" placeholder="Search archive by exam name, course or code..." oninput="renderPastResults()">
+                </div>
+            </div>
+
+            <div class="table-responsive">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Exam Name</th>
+                            <th>Exam Code</th>
+                            <th>Date Conducted</th>
+                            <th>Exam Type</th>
+                            <th>Total Marks</th>
+                            <th>Number of Candidates</th>
+                            <th>Result Status</th>
+                            <th style="text-align: right;">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="pastResultsTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script src="exam-store.js"></script>
+    <script src="app-utils.js"></script>
+    <script src="script.js"></script>
+    <script>
+        function initPastResults() {
+            let user = ExamStore.getCurrentUser();
+            if (!user || user.role !== 'teacher') {
+                user = { fullName: 'Prof. Robert Smith', role: 'teacher', username: 'rsmith' };
+                ExamStore.setCurrentUser(user);
+            }
+            AppNav.render('teacher-results');
+            renderPastResults();
+        }
+
+        function renderPastResults() {
+            const query = (document.getElementById('searchPastInput').value || '').toLowerCase();
+            const exams = ExamStore.getExams();
+
+            let filtered = exams;
+            if (query) {
+                filtered = filtered.filter(e => 
+                    e.name.toLowerCase().includes(query) || 
+                    e.subject.toLowerCase().includes(query) ||
+                    (e.examCode && e.examCode.toLowerCase().includes(query))
+                );
+            }
+
+            const tbody = document.getElementById('pastResultsTableBody');
+            if (filtered.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="8" class="empty-state-box">No examinations found in archives.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = filtered.map(e => {
+                const subs = ExamStore.getSubmissionsForExam(e.id);
+                return `
+                <tr>
+                    <td>
+                        <strong>${escapeHtml(e.name)}</strong>
+                        <div style="font-size: 12px; color: var(--text-light);">${escapeHtml(e.subject)}</div>
+                    </td>
+                    <td><span class="exam-code-box" style="padding: 2px 8px; font-size: 12px;">${escapeHtml(e.examCode)}</span></td>
+                    <td>${e.date}</td>
+                    <td>
+                        <span style="font-size: 12px; font-weight: 600;">
+                            ${e.examType === 'jpeg' ? '📷 JPEG Answer' : '◉ MCQ'}
+                        </span>
+                    </td>
+                    <td><strong>${e.totalMarks}</strong></td>
+                    <td><strong>${subs.length} Students</strong></td>
+                    <td>${AppNav.getStatusBadge(e.scoreSheetStatus || 'Not Evaluated')}</td>
+                    <td style="text-align: right;">
+                        <a href="teacher-scoresheet.html?id=${e.id}" class="btn btn-sm">Open Score Sheet →</a>
+                    </td>
+                </tr>
+                `;
+            }).join('');
+        }
+
+        document.addEventListener('DOMContentLoaded', initPastResults);
+    </script>
+</body>
+</html>
