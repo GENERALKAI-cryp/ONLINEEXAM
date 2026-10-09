@@ -388,6 +388,9 @@
             <a href="student-results.html" class="btn full-width" style="background: #ef4444; color: #fff; padding: 12px; text-decoration: none; font-weight: 600;">
                 Proceed to Results & Incident Report →
             </a>
+            <button type="button" class="btn btn-secondary full-width" style="margin-top: 10px; padding: 10px; font-size: 13px;" onclick="retakeExamAfterViolation()">
+                🔄 Retake Exam / Start Fresh Attempt
+            </button>
         </div>
     </div>
 
@@ -428,15 +431,15 @@
             }
 
             const urlParams = new URLSearchParams(window.location.search);
-            const examId = urlParams.get('id');
+            const examParam = urlParams.get('id') || urlParams.get('code');
 
-            if (!examId) {
+            if (!examParam) {
                 alert('No examination specified. Returning to Enter Exam.');
                 window.location.href = 'student-enter-exam.html';
                 return;
             }
 
-            exam = ExamStore.getExamById(examId);
+            exam = ExamStore.getExamById(examParam) || ExamStore.getExamByCode(examParam);
             if (!exam) {
                 alert('Examination not found. Returning to Enter Exam.');
                 window.location.href = 'student-enter-exam.html';
@@ -545,7 +548,7 @@
 
         // --- EXAM SECURITY: TAB SWITCHING VIOLATION (Section 22) ---
         function armSecurityMonitoring() {
-            // 1. Page Visibility API
+            // 1. Page Visibility API (Official, reliable detection for tab switches)
             document.addEventListener('visibilitychange', () => {
                 if (!securityArmed || !isExamActive) return;
 
@@ -554,10 +557,12 @@
                 }
             });
 
-            // 2. Window Blur (e.g. alt-tab or switching app)
+            // 2. Window Blur (only when document is actually hidden to prevent false triggers during mobile taps or scrolling)
             window.addEventListener('blur', () => {
                 if (!securityArmed || !isExamActive) return;
-                executeSecurityViolation('Window Blur Detected (Switched to external application or window)');
+                if (document.hidden) {
+                    executeSecurityViolation('Window Blur Detected (Switched to external application or window)');
+                }
             });
         }
 
@@ -585,6 +590,16 @@
             document.getElementById('violationCandidate').textContent = user ? (user.id || user.username) : 'Candidate';
 
             overlay.style.display = 'flex';
+        }
+
+        function retakeExamAfterViolation() {
+            const user = ExamStore.getCurrentUser();
+            if (user && exam) {
+                // Clear any violation submission for this exam and student so they can take it fresh
+                const subs = ExamStore.getSubmissions().filter(s => !(s.examId === exam.id && (s.username === user.username || s.studentName === user.fullName)));
+                ExamStore.saveSubmissions(subs);
+                window.location.reload();
+            }
         }
 
         // --- QUESTION RENDERING (MCQ & JPEG) ---
@@ -625,8 +640,11 @@
             document.getElementById('jpegUploadContainer').style.display = 'none';
 
             const container = document.getElementById('mcqOptionsContainer');
-            const savedAns = (currentSubmission && currentSubmission.answers && currentSubmission.answers[q.id]) 
-                ? currentSubmission.answers[q.id].answer 
+            const savedAnsObj = (currentSubmission && currentSubmission.answers && currentSubmission.answers[q.id]) 
+                ? currentSubmission.answers[q.id] 
+                : null;
+            const savedAnsVal = (savedAnsObj !== null && savedAnsObj.answer !== undefined) 
+                ? parseInt(savedAnsObj.answer) 
                 : null;
 
             const options = [
@@ -637,26 +655,54 @@
             ];
 
             container.innerHTML = options.map(opt => {
-                const isSelected = (savedAns !== null && parseInt(savedAns) === opt.val);
+                const isSelected = (savedAnsVal !== null && savedAnsVal === opt.val);
                 return `
-                    <div class="student-option-card ${isSelected ? 'selected' : ''}" onclick="selectOption('${q.id}', ${opt.val})">
+                    <div class="student-option-card ${isSelected ? 'selected' : ''}" 
+                         role="button" 
+                         tabindex="0"
+                         style="cursor: pointer; user-select: none;"
+                         onclick="selectOption('${escapeHtml(q.id)}', ${opt.val})"
+                         onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault(); selectOption('${escapeHtml(q.id)}', ${opt.val});}">
+                        <input type="radio" 
+                               name="mcqRadio_${escapeHtml(q.id)}" 
+                               value="${opt.val}" 
+                               ${isSelected ? 'checked' : ''} 
+                               style="width: 18px; height: 18px; cursor: pointer; accent-color: var(--primary-color);"
+                               onclick="event.stopPropagation(); selectOption('${escapeHtml(q.id)}', ${opt.val});">
                         <div class="option-letter-badge">${opt.letter}</div>
-                        <div style="font-size: 14.5px; color: var(--text-color);">${escapeHtml(opt.text)}</div>
+                        <div style="font-size: 15px; color: var(--text-color); flex: 1;">${escapeHtml(opt.text)}</div>
                     </div>
                 `;
             }).join('');
         }
 
         function selectOption(questionId, optionIndex) {
-            if (!isExamActive) return;
+            // Ensure exam session is treated as active
+            isExamActive = true;
 
-            ExamStore.saveAnswer(currentSubmission.id, questionId, {
-                answer: optionIndex,
+            if (!currentSubmission) {
+                const user = ExamStore.getCurrentUser() || { fullName: 'Student', role: 'student', username: 'student' };
+                currentSubmission = ExamStore.createSubmission(exam.id, user);
+            }
+            if (!currentSubmission.answers) {
+                currentSubmission.answers = {};
+            }
+
+            const answerObj = {
+                answer: parseInt(optionIndex),
                 answeredAt: new Date().toISOString()
-            });
+            };
 
-            // Re-render question options and palette
+            // 1. Immediately update in-memory state
+            currentSubmission.answers[questionId] = answerObj;
+
+            // 2. Persist to store / localStorage
+            ExamStore.saveAnswer(currentSubmission.id, questionId, answerObj);
+
+            // 3. Immediately re-render options, palette, and sidebar counts
             renderQuestion(activeQuestionIndex);
+            renderPalette();
+            updateSidebarCounts();
         }
 
         function renderJpegQuestion(q) {
@@ -693,15 +739,28 @@
                 const fileData = e.target.result;
                 const q = exam.questions[activeQuestionIndex];
 
-                ExamStore.saveAnswer(currentSubmission.id, q.id, {
+                if (!currentSubmission) {
+                    const user = ExamStore.getCurrentUser() || { fullName: 'Student', role: 'student', username: 'student' };
+                    currentSubmission = ExamStore.createSubmission(exam.id, user);
+                }
+                if (!currentSubmission.answers) {
+                    currentSubmission.answers = {};
+                }
+
+                const jpegObj = {
                     fileData: fileData,
                     fileName: file.name,
                     fileSize: file.size,
                     uploadedAt: new Date().toISOString()
-                });
+                };
+
+                currentSubmission.answers[q.id] = jpegObj;
+                ExamStore.saveAnswer(currentSubmission.id, q.id, jpegObj);
 
                 Toast.show('JPEG answer sheet uploaded successfully!', 'success');
                 renderQuestion(activeQuestionIndex);
+                renderPalette();
+                updateSidebarCounts();
             };
             reader.readAsDataURL(file);
         }
@@ -714,11 +773,20 @@
         function clearCurrentAnswer() {
             if (!currentSubmission || !exam) return;
             const q = exam.questions[activeQuestionIndex];
-            if (currentSubmission.answers[q.id]) {
+            if (currentSubmission.answers && currentSubmission.answers[q.id]) {
                 delete currentSubmission.answers[q.id];
-                ExamStore.saveSubmissions(ExamStore.getSubmissions());
+
+                const subs = ExamStore.getSubmissions();
+                const sub = subs.find(s => s.id === currentSubmission.id);
+                if (sub && sub.answers) {
+                    delete sub.answers[q.id];
+                    ExamStore.saveSubmissions(subs);
+                }
+
                 Toast.show('Answer cleared for this question.', 'info');
                 renderQuestion(activeQuestionIndex);
+                renderPalette();
+                updateSidebarCounts();
             }
         }
 
