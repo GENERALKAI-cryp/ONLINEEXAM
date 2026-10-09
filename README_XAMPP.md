@@ -108,10 +108,8 @@ http://localhost/online-exam/login.html
 | **Administrator** | `admin` | `password` | Dean / Admin Console |
 | **Teacher** | `rsmith` | `password` | Prof. Robert Smith (Database Systems) |
 | **Teacher** | `erostova` | `password` | Dr. Elena Rostova (Network Security) |
-| **Teacher** | `aturing` | `password` | Prof. Alan Turing (Algorithms) |
 | **Student** | `johndoe` | `password` | Candidate John Doe (B.Tech CS) |
 | **Student** | `janesmith` | `password` | Candidate Jane Smith (B.Tech IT) |
-| **Student** | `arivera` | `password` | Candidate Alex Rivera (Violation Log) |
 
 ---
 

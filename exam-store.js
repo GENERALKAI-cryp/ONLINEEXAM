@@ -12,8 +12,17 @@ const ExamStore = {
         CURRENT_USER: 'currentUser'
     },
 
-    // Initialize Store with Rich Demo Data if empty
+    DATA_VERSION: 'clean_v2',
+
+    // Initialize Store with clean official structure
     init() {
+        // Automatically flush previous mock test submissions
+        if (localStorage.getItem('oes_clean_ver') !== this.DATA_VERSION) {
+            localStorage.removeItem(this.KEYS.SUBMISSIONS);
+            localStorage.setItem(this.KEYS.SUBMISSIONS, JSON.stringify([]));
+            localStorage.setItem('oes_clean_ver', this.DATA_VERSION);
+        }
+
         if (!localStorage.getItem(this.KEYS.USERS)) {
             this.seedUsers();
         }
@@ -21,7 +30,7 @@ const ExamStore = {
             this.seedExams();
         }
         if (!localStorage.getItem(this.KEYS.SUBMISSIONS)) {
-            this.seedSubmissions();
+            this.saveSubmissions([]);
         }
     },
 
@@ -362,35 +371,16 @@ const ExamStore = {
     // --- SEED DATA ---
     seedUsers() {
         const users = [
-            { id: 'usr_admin', username: 'admin', fullName: 'Dr. Arthur Vance (Dean)', email: 'admin@university.edu', role: 'admin', status: 'Active', department: 'Academic Administration', createdAt: '2026-09-01T08:00:00Z' },
+            { id: 'usr_admin', username: 'admin', fullName: 'Dean / Admin Office', email: 'admin@university.edu', role: 'admin', status: 'Active', department: 'Academic Administration', createdAt: '2026-09-01T08:00:00Z' },
             { id: 'usr_t1', username: 'rsmith', fullName: 'Prof. Robert Smith', email: 'r.smith@university.edu', role: 'teacher', status: 'Active', department: 'Computer Science', createdAt: '2026-09-05T09:00:00Z' },
             { id: 'usr_t2', username: 'erostova', fullName: 'Dr. Elena Rostova', email: 'e.rostova@university.edu', role: 'teacher', status: 'Active', department: 'Information Security', createdAt: '2026-09-10T11:00:00Z' },
-            { id: 'usr_t3', username: 'aturing', fullName: 'Prof. Alan Turing', email: 'a.turing@university.edu', role: 'teacher', status: 'Active', department: 'Algorithms & AI', createdAt: '2026-09-12T10:00:00Z' },
             { id: 'usr_s1', username: 'johndoe', fullName: 'John Doe', email: 'john.doe@student.university.edu', role: 'student', status: 'Active', department: 'B.Tech Computer Science', createdAt: '2026-09-15T12:00:00Z' },
-            { id: 'usr_s2', username: 'janesmith', fullName: 'Jane Smith', email: 'jane.smith@student.university.edu', role: 'student', status: 'Active', department: 'B.Tech Information Technology', createdAt: '2026-09-15T12:30:00Z' },
-            { id: 'usr_s3', username: 'arivera', fullName: 'Alex Rivera', email: 'a.rivera@student.university.edu', role: 'student', status: 'Active', department: 'B.Tech Cyber Security', createdAt: '2026-09-16T14:00:00Z' },
-            { id: 'usr_s4', username: 'psharma', fullName: 'Priya Sharma', email: 'p.sharma@student.university.edu', role: 'student', status: 'Active', department: 'B.Tech Computer Science', createdAt: '2026-09-16T15:00:00Z' }
+            { id: 'usr_s2', username: 'janesmith', fullName: 'Jane Smith', email: 'jane.smith@student.university.edu', role: 'student', status: 'Active', department: 'B.Tech Information Technology', createdAt: '2026-09-15T12:30:00Z' }
         ];
         this.saveUsers(users);
     },
 
     seedExams() {
-        const sampleJpeg = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(`
-            <svg xmlns="http://www.w3.org/2000/svg" width="600" height="400" viewBox="0 0 600 400">
-                <rect width="600" height="400" fill="#fdfbf7" stroke="#333" stroke-width="2"/>
-                <text x="30" y="50" font-family="Courier, monospace" font-size="20" font-weight="bold" fill="#1e3a8a">Handwritten Answer Sheet - Page 1</text>
-                <line x1="30" y1="65" x2="570" y2="65" stroke="#1e3a8a" stroke-width="1.5"/>
-                <text x="30" y="110" font-family="cursive" font-size="18" fill="#111827">Q1. RSA Encryption Algorithm Steps:</text>
-                <text x="50" y="145" font-family="cursive" font-size="16" fill="#1f2937">1. Choose two large prime numbers p and q.</text>
-                <text x="50" y="175" font-family="cursive" font-size="16" fill="#1f2937">2. Compute n = p * q and Euler totient phi(n) = (p-1)*(q-1).</text>
-                <text x="50" y="205" font-family="cursive" font-size="16" fill="#1f2937">3. Select public exponent e coprime to phi(n).</text>
-                <text x="50" y="235" font-family="cursive" font-size="16" fill="#1f2937">4. Calculate private key d = e^(-1) mod phi(n).</text>
-                <text x="50" y="265" font-family="cursive" font-size="16" fill="#1f2937">5. Encryption: C = M^e mod n. Decryption: M = C^d mod n.</text>
-                <rect x="40" y="300" width="520" height="60" fill="#e0f2fe" stroke="#38bdf8" rx="6"/>
-                <text x="60" y="335" font-family="sans-serif" font-size="14" fill="#0369a1">[Verified handwritten diagram and mathematical derivation]</text>
-            </svg>
-        `);
-
         const exams = [
             // 1. MCQ Exam (Active) - Code: DBMS2027
             {
@@ -486,7 +476,7 @@ const ExamStore = {
                 examType: 'jpeg',
                 checkingMode: 'manual',
                 status: 'Published / Active',
-                scoreSheetStatus: 'Evaluation in Progress',
+                scoreSheetStatus: 'Not Evaluated',
                 teacherName: 'Dr. Elena Rostova',
                 createdAt: '2026-10-02T11:30:00Z',
                 questions: [
@@ -503,204 +493,13 @@ const ExamStore = {
                         instruction: 'Draw the sequence diagram with Diffie-Hellman parameters exchange and certificate verification.'
                     }
                 ]
-            },
-
-            // 3. Completed Past Exam with Published Score Sheet - Code: DSA101
-            {
-                id: 'ex_dsa_303',
-                name: 'Data Structures & Algorithms Final',
-                subject: 'Algorithms',
-                date: '2026-09-28',
-                time: '09:00',
-                duration: 60,
-                totalMarks: 100,
-                examCode: 'DSA101',
-                description: 'Comprehensive evaluation of asymptotic analysis, dynamic programming, and graph algorithms.',
-                rules: `• Answer all questions. Tab switching violation protocol is active.`,
-                examType: 'mcq',
-                checkingMode: 'auto',
-                status: 'Completed',
-                scoreSheetStatus: 'Result Published',
-                teacherName: 'Prof. Alan Turing',
-                createdAt: '2026-09-15T08:00:00Z',
-                questions: [
-                    { id: 'qd1', text: 'What is the worst-case time complexity of Quick Sort?', optionA: 'O(n log n)', optionB: 'O(n²)', optionC: 'O(n)', optionD: 'O(log n)', correctAnswer: 1, marks: 50 },
-                    { id: 'qd2', text: 'Which data structure is primarily used in Dijkstra algorithm?', optionA: 'FIFO Queue', optionB: 'Min-Heap Priority Queue', optionC: 'Stack', optionD: 'Linked List', correctAnswer: 1, marks: 50 }
-                ]
-            },
-
-            // 4. Draft Exam
-            {
-                id: 'ex_se_404',
-                name: 'Software Engineering Best Practices',
-                subject: 'Software Engineering',
-                date: '2026-11-05',
-                time: '11:00',
-                duration: 40,
-                totalMarks: 50,
-                examCode: 'SE404',
-                description: 'Agile methodologies, CI/CD pipelines, and software design patterns.',
-                rules: `• Exam rules pending final department review.`,
-                examType: 'mcq',
-                checkingMode: 'auto',
-                status: 'Draft',
-                scoreSheetStatus: 'Not Evaluated',
-                teacherName: 'Prof. Robert Smith',
-                createdAt: '2026-10-05T09:00:00Z',
-                questions: []
             }
         ];
         this.saveExams(exams);
     },
 
     seedSubmissions() {
-        const sampleJpeg = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(`
-            <svg xmlns="http://www.w3.org/2000/svg" width="600" height="400" viewBox="0 0 600 400">
-                <rect width="600" height="400" fill="#fdfbf7" stroke="#333" stroke-width="2"/>
-                <text x="30" y="50" font-family="Courier, monospace" font-size="20" font-weight="bold" fill="#1e3a8a">Handwritten Answer Sheet - Page 1</text>
-                <line x1="30" y1="65" x2="570" y2="65" stroke="#1e3a8a" stroke-width="1.5"/>
-                <text x="30" y="110" font-family="cursive" font-size="18" fill="#111827">Q1. RSA Encryption Algorithm Steps:</text>
-                <text x="50" y="145" font-family="cursive" font-size="16" fill="#1f2937">1. Choose two large prime numbers p and q.</text>
-                <text x="50" y="175" font-family="cursive" font-size="16" fill="#1f2937">2. Compute n = p * q and Euler totient phi(n) = (p-1)*(q-1).</text>
-                <text x="50" y="205" font-family="cursive" font-size="16" fill="#1f2937">3. Select public exponent e coprime to phi(n).</text>
-                <text x="50" y="235" font-family="cursive" font-size="16" fill="#1f2937">4. Calculate private key d = e^(-1) mod phi(n).</text>
-                <text x="50" y="265" font-family="cursive" font-size="16" fill="#1f2937">5. Encryption: C = M^e mod n. Decryption: M = C^d mod n.</text>
-                <rect x="40" y="300" width="520" height="60" fill="#e0f2fe" stroke="#38bdf8" rx="6"/>
-                <text x="60" y="335" font-family="sans-serif" font-size="14" fill="#0369a1">[Verified handwritten diagram and mathematical derivation]</text>
-            </svg>
-        `);
-
-        const submissions = [
-            // 1. John Doe - DSA 101 - Result Published (Score: 100/100)
-            {
-                id: 'sub_dsa_john',
-                examId: 'ex_dsa_303',
-                examName: 'Data Structures & Algorithms Final',
-                examCode: 'DSA101',
-                examType: 'mcq',
-                totalMarks: 100,
-                studentName: 'John Doe',
-                studentId: 'STU-2024-001',
-                username: 'johndoe',
-                answers: {
-                    'qd1': { answer: 1 },
-                    'qd2': { answer: 1 }
-                },
-                questionScores: { 'qd1': 50, 'qd2': 50 },
-                questionRemarks: { 'qd1': 'Correct', 'qd2': 'Correct' },
-                obtainedScore: 100,
-                status: 'Result Published',
-                startedAt: '2026-09-28T09:02:00Z',
-                submittedAt: '2026-09-28T09:45:00Z'
-            },
-
-            // 2. Jane Smith - DSA 101 - Result Published (Score: 50/100)
-            {
-                id: 'sub_dsa_jane',
-                examId: 'ex_dsa_303',
-                examName: 'Data Structures & Algorithms Final',
-                examCode: 'DSA101',
-                examType: 'mcq',
-                totalMarks: 100,
-                studentName: 'Jane Smith',
-                studentId: 'STU-2024-002',
-                username: 'janesmith',
-                answers: {
-                    'qd1': { answer: 1 },
-                    'qd2': { answer: 0 }
-                },
-                questionScores: { 'qd1': 50, 'qd2': 0 },
-                questionRemarks: { 'qd1': 'Correct', 'qd2': 'Incorrect' },
-                obtainedScore: 50,
-                status: 'Result Published',
-                startedAt: '2026-09-28T09:05:00Z',
-                submittedAt: '2026-09-28T09:50:00Z'
-            },
-
-            // 3. John Doe - NETSEC 99 (JPEG Exam) - Under Correction (Pending Teacher Evaluation)
-            {
-                id: 'sub_netsec_john',
-                examId: 'ex_netsec_202',
-                examName: 'Network Security & Cryptography Assessment',
-                examCode: 'NETSEC99',
-                examType: 'jpeg',
-                totalMarks: 40,
-                studentName: 'John Doe',
-                studentId: 'STU-2024-001',
-                username: 'johndoe',
-                answers: {
-                    'q_ns_1': {
-                        fileData: sampleJpeg,
-                        fileName: 'john_doe_q1_rsa_derivation.jpg',
-                        uploadedAt: '2026-10-06T14:20:00Z'
-                    },
-                    'q_ns_2': {
-                        fileData: sampleJpeg,
-                        fileName: 'john_doe_q2_tls_handshake.jpg',
-                        uploadedAt: '2026-10-06T14:35:00Z'
-                    }
-                },
-                questionScores: { 'q_ns_1': 18, 'q_ns_2': 17 },
-                questionRemarks: { 'q_ns_1': 'Clear mathematical derivation and diagram.', 'q_ns_2': 'Good illustration of Key Exchange phases.' },
-                obtainedScore: 35,
-                status: 'Under Correction', // Not published yet -> student sees "Under Correction"
-                startedAt: '2026-10-06T14:02:00Z',
-                submittedAt: '2026-10-06T14:40:00Z'
-            },
-
-            // 4. Priya Sharma - NETSEC 99 (JPEG Exam) - Submitted
-            {
-                id: 'sub_netsec_priya',
-                examId: 'ex_netsec_202',
-                examName: 'Network Security & Cryptography Assessment',
-                examCode: 'NETSEC99',
-                examType: 'jpeg',
-                totalMarks: 40,
-                studentName: 'Priya Sharma',
-                studentId: 'STU-2024-004',
-                username: 'psharma',
-                answers: {
-                    'q_ns_1': {
-                        fileData: sampleJpeg,
-                        fileName: 'priya_sharma_rsa.jpeg',
-                        uploadedAt: '2026-10-06T14:25:00Z'
-                    }
-                },
-                questionScores: {},
-                questionRemarks: {},
-                obtainedScore: 0,
-                status: 'Submitted',
-                startedAt: '2026-10-06T14:01:00Z',
-                submittedAt: '2026-10-06T14:38:00Z'
-            },
-
-            // 5. Alex Rivera - DBMS 2027 - Security Violation Failure!
-            {
-                id: 'sub_dbms_alex_violation',
-                examId: 'ex_dbms_101',
-                examName: 'Database Management Systems Midterm',
-                examCode: 'DBMS2027',
-                examType: 'mcq',
-                totalMarks: 50,
-                studentName: 'Alex Rivera',
-                studentId: 'STU-2024-003',
-                username: 'arivera',
-                answers: {
-                    'q1': { answer: 1 }
-                },
-                questionScores: { 'q1': 0 },
-                questionRemarks: { 'q1': 'Void due to security violation' },
-                obtainedScore: 0,
-                status: 'Failed — Security Violation',
-                securityViolation: {
-                    reason: 'Tab Switching Detected (Attempted window change to external site)',
-                    timestamp: '2026-10-05T10:14:22Z'
-                },
-                startedAt: '2026-10-05T10:05:00Z',
-                submittedAt: '2026-10-05T10:14:22Z'
-            }
-        ];
-        this.saveSubmissions(submissions);
+        this.saveSubmissions([]);
     }
 };
 
